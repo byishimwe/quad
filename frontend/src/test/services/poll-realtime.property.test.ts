@@ -112,12 +112,16 @@ describe("Real-time Poll Updates Property Tests", () => {
   it("Property 53: Real-time updates are applied to correct poll", async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.array(
+        fc.uniqueArray(
           fc.record({
             id: fc.string({ minLength: 10, maxLength: 30 }),
             totalVotes: fc.integer({ min: 0, max: 1000 }),
           }),
-          { minLength: 2, maxLength: 10 },
+          {
+            minLength: 2,
+            maxLength: 10,
+            selector: (poll) => poll.id,
+          },
         ),
         fc.integer({ min: 0, max: 9 }),
         fc.integer({ min: 0, max: 1000 }),
