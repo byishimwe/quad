@@ -1,59 +1,14 @@
-# Scripts Reference (Monorepo)
+# Scripts
 
-This document describes the scripts available in the Quad repo.
+Use Node.js 24.19.0. Run these commands from the repository root:
 
-## Root scripts (`package.json`)
+| Command | Action |
+| --- | --- |
+| `npm run setup` | `npm ci` for backend, then frontend |
+| `npm run lint` | ESLint for frontend and backend |
+| `npm run typecheck` | TypeScript checks for both packages |
+| `npm test` | Frontend Vitest run, then backend Vitest run |
+| `npm run build` | Backend TypeScript build, then frontend Vite build |
+| `npm run check` | Lint, typecheck, tests, build |
 
-Run these from the repo root.
-
-- **`npm run install`**
-  - Installs dependencies for both `backend/` and `frontend/`.
-- **`npm run typecheck`**
-  - Runs TypeScript checks for both apps.
-- **`npm run build`**
-  - Builds backend then frontend.
-- **`npm run test`**
-  - Runs frontend tests.
-
-## Frontend scripts (`frontend/package.json`)
-
-Run these from the `frontend/` directory.
-
-- **`npm run dev`** - Start Vite dev server.
-- **`npm run build`** - TypeScript build + Vite production build.
-- **`npm run build:production`** - Production-mode Vite build.
-- **`npm run build:analyze`** - Production build + bundle visualizer.
-- **`npm run lint`** - ESLint.
-- **`npm run typecheck`** - TS build check + lint.
-- **`npm run test`** - Vitest run.
-- **`npm run test:watch`** - Vitest watch mode.
-- **`npm run test:ui`** - Vitest UI.
-
-## Backend scripts (`backend/package.json`)
-
-Run these from the `backend/` directory.
-
-- **`npm run dev`** - Start dev server (`tsx src/server.ts`).
-- **`npm run dev:tunnel`** - Start dev with tunnel script.
-- **`npm run dev:simple`** - Run server + ngrok concurrently.
-- **`npm run build`** - TypeScript compile to `dist/`.
-- **`npm run start`** - Run compiled server.
-- **`npm run typecheck`** - TS noEmit typecheck.
-- **`npm run lint`** / **`npm run lint:fix`** - ESLint.
-- **`npm run test`** - Vitest.
-
-## Recommended common workflows
-
-- **Local dev**
-  - Start backend (`backend/npm run dev`)
-  - Start frontend (`frontend/npm run dev`)
-
-- **CI-like check**
-  - `npm run typecheck`
-  - `npm run build`
-
-- **Frontend test run**
-  - `npm --prefix frontend run test`
-
-- **Backend test run**
-  - `npm --prefix backend run test:run`
+From `frontend/`, `npm run dev` starts Vite, `npm run test:watch` starts Vitest watch mode, and `npm run preview` previews a build. From `backend/`, `npm run dev` starts the API and `npm run test:run` runs integration tests with two workers. Backend tests use a temporary local MongoDB server and must be able to bind to localhost.
