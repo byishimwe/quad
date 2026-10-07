@@ -217,10 +217,6 @@ router.post(
             break;
           }
 
-          if (await deleteOwnedAssets(userId)) {
-            throw new Error("Cloudinary account cleanup incomplete");
-          }
-
           // Cascade delete all user data
           // We use dynamic imports or assume models are available
           const { Post } = await import("../models/Post.model.js");
@@ -253,6 +249,12 @@ router.post(
             Comment.deleteMany({ "author.clerkId": userId }),
             CommentLike.deleteMany({ userId }),
           ]);
+
+          // References must be removed before the shared-asset guard can safely
+          // determine which uploads are no longer in use.
+          if (await deleteOwnedAssets(userId)) {
+            throw new Error("Cloudinary account cleanup incomplete");
+          }
 
           logger.info("User and related data deleted via Clerk webhook", {
             clerkId: userId,
