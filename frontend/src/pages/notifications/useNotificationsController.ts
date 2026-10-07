@@ -127,14 +127,19 @@ export function useNotificationsController({
     if (!loading && hasMore) setPage((p) => p + 1);
   }, [hasMore, loading]);
 
-  const handleFilterChange = useCallback((tab: FilterTab) => {
-    setInitialLoading(true);
-    setError(null);
-    setPage(1);
-    setNotifications([]);
-    setHasMore(true);
-    setFilter(tab);
-  }, []);
+  const handleFilterChange = useCallback(
+    (tab: FilterTab) => {
+      if (tab === filter) return;
+
+      setInitialLoading(true);
+      setError(null);
+      setPage(1);
+      setNotifications([]);
+      setHasMore(true);
+      setFilter(tab);
+    },
+    [filter],
+  );
 
   const handleMarkAsRead = useCallback(
     async (notification: ApiNotification) => {
