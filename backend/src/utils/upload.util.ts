@@ -4,6 +4,10 @@ import { logger } from "./logger.util.js";
 import { Readable } from "stream";
 import { createReadStream } from "fs";
 import { UploadedAsset } from "../models/UploadedAsset.model.js";
+import { User } from "../models/User.model.js";
+import { Post } from "../models/Post.model.js";
+import { Story } from "../models/Story.model.js";
+import { Poll } from "../models/Poll.model.js";
 import type {
   UploadApiErrorResponse,
   UploadApiResponse,
@@ -191,7 +195,18 @@ export const deleteMultipleFromCloudinary = async (
   };
 };
 
-/** Delete assets recorded as uploaded by this user; retain failed records for retry. */
+async function isAssetReferenced(url: string): Promise<boolean> {
+  const references = await Promise.all([
+    User.exists({ $or: [{ profileImage: url }, { coverImage: url }] }),
+    Post.exists({ "media.url": url }),
+    Story.exists({ $or: [{ coverImage: url }, { content: url }] }),
+    Poll.exists({ "questionMedia.url": url }),
+  ]);
+
+  return references.some(Boolean);
+}
+
+/** Delete unreferenced assets recorded as uploaded by this user; retain failed records for retry. */
 export async function deleteOwnedAssets(ownerClerkId: string, urls?: string[]): Promise<number> {
   const assets = await UploadedAsset.find({
     ownerClerkId,
@@ -199,6 +214,8 @@ export async function deleteOwnedAssets(ownerClerkId: string, urls?: string[]): 
   }).lean();
   let failures = 0;
   for (const asset of assets) {
+    if (await isAssetReferenced(asset.url)) continue;
+
     const result = await deleteFromCloudinary(asset.publicId, asset.resourceType);
     if (result.success) await UploadedAsset.deleteOne({ _id: asset._id });
     else {
