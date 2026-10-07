@@ -1,8 +1,6 @@
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { Table } from "@tiptap/extension-table";
 import TableCell from "@tiptap/extension-table-cell";
@@ -18,8 +16,13 @@ export function useStoryEditor() {
         heading: {
           levels: [1, 2, 3, 4],
         },
+        link: {
+          openOnClick: false,
+          HTMLAttributes: {
+            class: "text-blue-500 underline",
+          },
+        },
       }),
-      Underline,
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
@@ -30,12 +33,6 @@ export function useStoryEditor() {
       TableHeader,
       TableCell,
       Callout,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "text-blue-500 underline",
-        },
-      }),
       Placeholder.configure({
         placeholder: "Start writing your story here...",
       }),
@@ -44,7 +41,7 @@ export function useStoryEditor() {
     editorProps: {
       attributes: {
         class:
-          "prose dark:prose-invert focus:outline-none min-h-[50vh] max-w-none text-foreground text-base md:text-[17px] leading-relaxed md:leading-[1.7]",
+          "seamless-field prose dark:prose-invert min-h-[50vh] max-w-none text-foreground text-base md:text-[17px] leading-relaxed md:leading-[1.7]",
       },
     },
   });

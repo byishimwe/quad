@@ -82,7 +82,7 @@ export function CreateStoryForm({
               onChange={(e) => onTitleChange(e.target.value)}
               placeholder="Give your story a brilliant title..."
               className={cn(
-                "w-full bg-transparent border-none focus:ring-0 text-3xl md:text-4xl font-extrabold text-foreground placeholder:text-muted-foreground/40 p-0 transition-colors",
+                "seamless-field w-full bg-transparent text-3xl md:text-4xl font-extrabold text-foreground placeholder:text-muted-foreground/40 py-1 transition-colors",
                 validationErrors.title && "text-destructive",
               )}
             />

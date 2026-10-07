@@ -1,5 +1,6 @@
 import { Story, type IStoryDocument } from "../models/Story.model.js";
 import { User } from "../models/User.model.js";
+import { deleteOwnedAssets } from "../utils/upload.util.js";
 import type {
   CreateStorySchemaType,
   GetStoriesQuerySchemaType,
@@ -210,6 +211,7 @@ export class StoryService {
     }
 
     await Story.findByIdAndDelete(id);
+    if (story.coverImage) await deleteOwnedAssets(userId, [story.coverImage]);
 
     if (story.status === "published") {
       const io = getSocketIO();

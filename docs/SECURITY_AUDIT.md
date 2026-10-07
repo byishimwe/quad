@@ -1,5 +1,7 @@
 # Security Audit Report
 
+> **HISTORICAL SNAPSHOT — superseded by [QUALITY_STATUS.md](QUALITY_STATUS.md).** Ratings, test counts, and readiness claims below describe an earlier review and are not current release-candidate evidence.
+
 ## Executive Summary
 
 This document provides a comprehensive security audit of the Quad social platform, evaluating authentication, authorization, input validation, and protection against common vulnerabilities.

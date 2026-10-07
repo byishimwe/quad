@@ -4,6 +4,7 @@ import {
   useMotionValue,
   useTransform,
   animate,
+  useReducedMotion,
   type MotionValue,
 } from "framer-motion";
 import {
@@ -34,9 +35,10 @@ const GAP = 16;
 const DWELL_SECONDS = 3.8;
 
 /** Duration of each scroll transition (seconds) */
-const TRANSITION_DURATION = 0.8;
+const TRANSITION_DURATION = 0.45;
 
 export function LeftPanelCarousel() {
+  const reducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const activeIndexRef = useRef(1); // keep a ref to avoid stale closures
@@ -46,6 +48,7 @@ export function LeftPanelCarousel() {
   const [cardCenters, setCardCenters] = useState<number[]>([]);
   const [ready, setReady] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(() => document.visibilityState === "visible");
 
   const y = useMotionValue(0);
 
@@ -53,6 +56,12 @@ export function LeftPanelCarousel() {
   useEffect(() => {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => setIsVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   /**
    * Walk the card refs and compute the Y-center of each card using their
@@ -84,19 +93,17 @@ export function LeftPanelCarousel() {
       const centers = measure();
       setCardCenters(centers);
 
-      // Smooth Initial Arrival Sequence
       const target = h / 2 - centers[1];
-      // Start 120px lower for a graceful rise
-      y.set(target - 120);
-      animate(y, target, {
-        duration: 2.2,
-        ease: [0.16, 1, 0.3, 1], // Sophisticated entry
-      });
+      if (reducedMotion) y.set(target);
+      else {
+        y.set(target - 24);
+        animate(y, target, { duration: 0.35, ease: "easeOut" });
+      }
       setReady(true);
-    }, 450); // Slightly more time for initial paint
+    }, 50);
 
     return () => clearTimeout(timeout);
-  }, [measure, y]);
+  }, [measure, y, reducedMotion]);
 
   // --- Resize handling -------------------------------------------------------
   useEffect(() => {
@@ -140,7 +147,7 @@ export function LeftPanelCarousel() {
 
   // --- Auto-advance timer ----------------------------------------------------
   useEffect(() => {
-    if (!ready || containerHeight === 0 || isHovered) return;
+    if (!ready || containerHeight === 0 || isHovered || !isVisible || reducedMotion) return;
 
     const timer = setTimeout(() => {
       // Fresh measurement right before animating
@@ -171,7 +178,7 @@ export function LeftPanelCarousel() {
     }, DWELL_SECONDS * 1000);
 
     return () => clearTimeout(timer);
-  }, [ready, containerHeight, activeIndex, measure, y, isHovered]);
+  }, [ready, containerHeight, activeIndex, measure, y, isHovered, isVisible, reducedMotion]);
 
   return (
     <div

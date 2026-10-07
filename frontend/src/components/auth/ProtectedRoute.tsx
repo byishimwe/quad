@@ -1,9 +1,8 @@
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { Navigate, useLocation } from "react-router-dom";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { MainAppSkeleton } from "@/components/ui/loading";
 import type { PermissionType } from "@/lib/security";
-import { logAuthEvent } from "@/lib/authAudit";
 import { hasAllPermissions } from "@/lib/security";
 import { DEFAULT_PERMISSIONS } from "@/lib/permissions";
 
@@ -66,17 +65,6 @@ export function ProtectedRoute({
     return [];
   }, [clerkUser]);
 
-  // Log authentication check
-  useEffect(() => {
-    if (isLoaded) {
-      logAuthEvent("Protected route access attempt", {
-        path: location.pathname,
-        isSignedIn,
-        requiredPermissions,
-      });
-    }
-  }, [isLoaded, isSignedIn, location.pathname, requiredPermissions]);
-
   // Show skeleton while Clerk is initializing
   if (!isLoaded) {
     return <MainAppSkeleton />;
@@ -84,11 +72,6 @@ export function ProtectedRoute({
 
   // Redirect to login if not authenticated
   if (!isSignedIn) {
-    logAuthEvent("Unauthenticated access blocked", {
-      path: location.pathname,
-      redirectTo,
-    });
-
     // Preserve intended destination for redirect after login
     sessionStorage.setItem(
       "redirectAfterLogin",
@@ -102,12 +85,6 @@ export function ProtectedRoute({
     const allowed = hasAllPermissions(userPermissions, requiredPermissions);
 
     if (!allowed) {
-      logAuthEvent("Permission denied", {
-        path: location.pathname,
-        requiredPermissions,
-        userPermissions,
-      });
-
       return (
         <div className="flex items-center justify-center min-h-screen bg-background">
           <div className="text-center space-y-4 max-w-md p-6">
@@ -120,10 +97,6 @@ export function ProtectedRoute({
       );
     }
   }
-
-  logAuthEvent("Protected route access granted", {
-    path: location.pathname,
-  });
 
   return <>{children}</>;
 }

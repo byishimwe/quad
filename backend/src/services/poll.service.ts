@@ -2,6 +2,7 @@ import { Poll } from "../models/Poll.model.js";
 import { PollVote } from "../models/PollVote.model.js";
 import type { IPollVoteDocument } from "../models/PollVote.model.js";
 import { User } from "../models/User.model.js";
+import { deleteOwnedAssets } from "../utils/upload.util.js";
 import type {
   CreatePollSchemaType,
   GetPollsQuerySchemaType,
@@ -274,6 +275,7 @@ export class PollService {
       Poll.findByIdAndDelete(id),
       PollVote.deleteMany({ pollId: id }),
     ]);
+    if (poll.questionMedia?.url) await deleteOwnedAssets(userId, [poll.questionMedia.url]);
 
     const io = getSocketIO();
     io.emit("pollDeleted", id);

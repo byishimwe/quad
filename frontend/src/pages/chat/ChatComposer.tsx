@@ -59,7 +59,7 @@ export function ChatComposer({
             maxLength={MAX_MESSAGE_LENGTH}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 bg-transparent border-none focus:ring-0 outline-none text-foreground placeholder:text-muted-foreground/40 text-[15px] min-h-[24px] resize-none py-1 scrollbar-hide"
+            className="seamless-field flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/40 text-[15px] min-h-[24px] resize-none py-1 scrollbar-hide"
             aria-label="Message input"
           />
 

@@ -31,10 +31,10 @@ export function CreatePostTextField({
             What's happening?
           </p>
           <FormControl>
-            <div className="relative rounded-2xl border border-border bg-muted/30">
+            <div className="relative rounded-2xl border border-border bg-muted/30 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
               <AutoExpandingTextarea
                 placeholder="Share your thoughts..."
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm text-foreground/90 placeholder:text-muted-foreground px-4 py-3 pr-24"
+                className="seamless-field bg-transparent text-sm text-foreground/90 placeholder:text-muted-foreground px-4 py-3 pr-24"
                 minHeight={120}
                 maxHeight={320}
                 disabled={isLoading}
@@ -44,7 +44,8 @@ export function CreatePostTextField({
                 className={cn(
                   "absolute bottom-2 right-3 text-xs text-muted-foreground",
                   isOverLimit && "text-destructive font-medium",
-                )}>
+                )}
+              >
                 {charCount}/1000
               </span>
             </div>

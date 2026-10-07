@@ -1,5 +1,7 @@
 # Performance Audit Report
 
+> **HISTORICAL SNAPSHOT — superseded by [QUALITY_STATUS.md](QUALITY_STATUS.md).** Ratings, test counts, and readiness claims below describe an earlier review and are not current release-candidate evidence.
+
 ## Executive Summary
 
 This document provides a comprehensive performance audit of the Quad social platform, evaluating loading times, rendering performance, and optimization strategies.

@@ -45,7 +45,7 @@ Behavior:
   - error is not an `AppError`, or
   - status code is `>= 500`
 
-If you configure Sentry (optional), ensure backend env is set (see shared env docs).
+The current error tracker writes to application logs. There is no active Sentry integration or DSN setting.
 
 ## Correlating logs
 

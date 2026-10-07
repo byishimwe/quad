@@ -96,7 +96,7 @@ export function useChatSocket({
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("connect_error", onConnectError);
-    socket.on("reconnect_attempt", onReconnectAttempt);
+    socket.io.on("reconnect_attempt", onReconnectAttempt);
 
     socket.on("chat:message:new", onNew);
     socket.on("chat:message:edited", onEdited);
@@ -108,7 +108,7 @@ export function useChatSocket({
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("connect_error", onConnectError);
-      socket.off("reconnect_attempt", onReconnectAttempt);
+      socket.io.off("reconnect_attempt", onReconnectAttempt);
 
       socket.off("chat:message:new", onNew);
       socket.off("chat:message:edited", onEdited);

@@ -75,16 +75,16 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 # Install nvm (Windows - use nvm-windows)
 # Download from: https://github.com/coreybutler/nvm-windows
 
-# Install and use Node.js 18
-nvm install 18
-nvm use 18
-nvm alias default 18
+# Install and use the repository version
+nvm install 24.19.0
+nvm use 24.19.0
+nvm alias default 24.19.0
 ```
 
 #### **Direct Installation**
 
 - Download from [nodejs.org](https://nodejs.org/)
-- Choose LTS version (18.x)
+- Install Node.js 24.19.0, matching the repository `.nvmrc`
 - Follow installation wizard
 
 ### **3. Project Setup**

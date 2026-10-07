@@ -42,40 +42,42 @@ export function PollQuestionSection({
   return (
     <>
       <div className="space-y-2">
-        {/* Seamless, prominent question input — no hard sub-border */}
-        <textarea
-          id="poll-question"
-          value={question}
-          onChange={(e) => {
-            setQuestion(e.target.value);
-            if (validationErrors.question) {
-              setValidationErrors((prev) => ({
-                ...prev,
-                question: undefined,
-              }));
-            }
-          }}
-          rows={2}
-          maxLength={500}
-          placeholder="Ask your question..."
-          className={cn(
-            "w-full bg-transparent border-none focus:ring-0 text-2xl md:text-3xl font-extrabold text-foreground placeholder:text-muted-foreground/40 p-0 resize-none leading-tight transition-colors",
-            validationErrors.question && "text-destructive",
-          )}
-          aria-invalid={!!validationErrors.question}
-        />
+        {/* Seamless, prominent question input — the surrounding card provides the visible border and focus ring */}
+        <div className="relative rounded-2xl border border-border bg-muted/30 px-4 pt-4 pb-2 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <textarea
+            id="poll-question"
+            value={question}
+            onChange={(e) => {
+              setQuestion(e.target.value);
+              if (validationErrors.question) {
+                setValidationErrors((prev) => ({
+                  ...prev,
+                  question: undefined,
+                }));
+              }
+            }}
+            rows={2}
+            maxLength={500}
+            placeholder="Ask your question..."
+            className={cn(
+              "seamless-field w-full bg-transparent text-2xl md:text-3xl font-extrabold text-foreground placeholder:text-muted-foreground/40 p-0 resize-none leading-tight transition-colors",
+              validationErrors.question && "text-destructive",
+            )}
+            aria-invalid={!!validationErrors.question}
+          />
 
-        <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-          <span>{trimmedQuestionLength}/500</span>
-          {validationErrors.question ? (
-            <span className="text-destructive">
-              {validationErrors.question}
-            </span>
-          ) : trimmedQuestionLength > 0 && trimmedQuestionLength < 10 ? (
-            <span className="text-muted-foreground/60">
-              Minimum 10 characters
-            </span>
-          ) : null}
+          <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+            <span>{trimmedQuestionLength}/500</span>
+            {validationErrors.question ? (
+              <span className="text-destructive">
+                {validationErrors.question}
+              </span>
+            ) : trimmedQuestionLength > 0 && trimmedQuestionLength < 10 ? (
+              <span className="text-muted-foreground/60">
+                Minimum 10 characters
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -125,7 +127,8 @@ export function PollQuestionSection({
               if (file && file.type.startsWith("image/")) {
                 onUploadQuestionMedia(file);
               }
-            }}>
+            }}
+          >
             <div className="flex flex-col items-center gap-2">
               {uploadingQuestionMedia ? (
                 <>
@@ -158,7 +161,8 @@ export function PollQuestionSection({
         {questionMedia && (
           <div
             className="group relative overflow-hidden rounded-2xl border border-border/40 bg-muted/10"
-            tabIndex={0}>
+            tabIndex={0}
+          >
             <img
               src={questionMedia.url}
               alt="poll media"
@@ -189,7 +193,8 @@ export function PollQuestionSection({
                   e.preventDefault();
                   e.stopPropagation();
                   openFilePicker();
-                }}>
+                }}
+              >
                 Change
               </Button>
               <Button
@@ -202,7 +207,8 @@ export function PollQuestionSection({
                   e.preventDefault();
                   e.stopPropagation();
                   setQuestionMedia(undefined);
-                }}>
+                }}
+              >
                 <PiXBold className="h-4 w-4 mr-2" />
                 Remove
               </Button>

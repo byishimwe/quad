@@ -1,5 +1,7 @@
 # Production Readiness Summary
 
+> **HISTORICAL SNAPSHOT — superseded by [QUALITY_STATUS.md](QUALITY_STATUS.md).** Ratings, test counts, and readiness claims below describe an earlier review and are not current release-candidate evidence.
+
 This document summarizes the production readiness improvements implemented for the Quad platform.
 
 ## Overview

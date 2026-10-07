@@ -2,7 +2,7 @@
  * Design Tokens for Quad Platform
  *
  * This file provides type-safe access to design tokens defined as CSS variables.
- * All tokens follow the shadcn/ui naming convention.
+ * Tokens mirror the CSS variables used by Quad's components.
  *
  * Validates: Requirements 1.4, 13.1, 13.2, 13.3, 13.4, 13.5
  */

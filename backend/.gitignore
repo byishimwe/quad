@@ -1,5 +1,6 @@
 # Node modules
 node_modules/
+.mongo-test-*/
 
 # Logs
 logs/
@@ -32,10 +33,6 @@ coverage/
 dist/
 build/
 
-# npm package locks
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
 # OS generated files
 .DS_Store

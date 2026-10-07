@@ -109,7 +109,7 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.9, ease: "easeOut" }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           className="flex flex-col items-center text-center space-y-3">
           <h2 className="text-4xl font-black tracking-tight text-foreground">
             Sign in to{" "}
@@ -117,7 +117,7 @@ export default function LoginPage() {
               Quad
             </span>
           </h2>
-          <p className="text-[14px] text-muted-foreground/50 font-medium max-w-[280px]">
+          <p className="text-sm text-muted-foreground font-medium max-w-[280px]">
             Welcome back. Continue where the pulse left off.
           </p>
         </motion.div>
@@ -128,7 +128,7 @@ export default function LoginPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 1.1, ease: "easeOut" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="space-y-6">
             {error && (
               <Alert
@@ -157,7 +157,7 @@ export default function LoginPage() {
                   <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-border/40 to-transparent" />
                 </div>
                 <div className="relative bg-background px-6">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 italic">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     OR
                   </span>
                 </div>
@@ -183,7 +183,7 @@ export default function LoginPage() {
                   rightElement={
                     <button
                       type="button"
-                      className="p-1.5 text-muted-foreground/30 hover:text-primary transition-colors"
+                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label={
                         showPassword ? "Hide password" : "Show password"
@@ -205,19 +205,6 @@ export default function LoginPage() {
                     loading={submitting}
                     disabled={!canSubmit}>
                     Sign In
-                    {/* Shimmer Effect Overlay */}
-                    <motion.div
-                      animate={{
-                        left: ["-100%", "200%"],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        repeatDelay: 5,
-                        ease: "easeInOut",
-                      }}
-                      className="absolute inset-x-0 h-full w-[100px] skew-x-[25deg] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-                    />
                   </Button>
                 </div>
               </form>

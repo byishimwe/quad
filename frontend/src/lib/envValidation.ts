@@ -16,7 +16,6 @@ interface EnvConfig {
   clerkAfterSignUpUrl: string;
 
   // Feature Flags
-  enablePWA: boolean;
   enableNotifications: boolean;
 
   // Environment
@@ -26,9 +25,6 @@ interface EnvConfig {
   uploadTimeoutMs: number;
   apiTimeoutMs: number;
 
-  // Optional: Error Tracking
-  sentryDsn?: string;
-  sentryEnvironment?: string;
 }
 
 /**
@@ -65,12 +61,9 @@ export function validateEnv(): EnvConfig {
     clerkSignUpUrl: import.meta.env.VITE_CLERK_SIGN_UP_URL || "/signup",
     clerkAfterSignInUrl: import.meta.env.VITE_CLERK_AFTER_SIGN_IN_URL || "/",
     clerkAfterSignUpUrl: import.meta.env.VITE_CLERK_AFTER_SIGN_UP_URL || "/",
-    enablePWA: import.meta.env.VITE_ENABLE_PWA === "true",
     enableNotifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === "true",
     nodeEnv:
       import.meta.env.VITE_NODE_ENV || import.meta.env.MODE || "development",
-    sentryDsn: import.meta.env.VITE_SENTRY_DSN,
-    sentryEnvironment: import.meta.env.VITE_SENTRY_ENVIRONMENT,
     uploadTimeoutMs:
       parseInt(import.meta.env.VITE_UPLOAD_TIMEOUT_MS as string, 10) || 300000,
     apiTimeoutMs:

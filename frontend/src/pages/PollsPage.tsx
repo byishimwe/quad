@@ -80,6 +80,8 @@ export default function PollsPage() {
       ...(createdId ? { id: createdId } : {}),
     };
 
+    // Navigation state carries the newly created poll into this list.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPolls((prev) => {
       if (prev.some((p) => p.id === createdPoll.id)) return prev;
       return [createdPoll, ...prev];
@@ -104,6 +106,8 @@ export default function PollsPage() {
       id: updatedId,
     };
 
+    // Navigation state carries the edited poll into this list.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPolls((prev) => {
       const exists = prev.some((p) => p.id === updatedPoll.id);
       if (!exists) return [updatedPoll, ...prev];

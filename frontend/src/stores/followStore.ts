@@ -32,6 +32,7 @@ type FollowState = {
 
   applyFollowNewEvent: (payload: FollowEventPayload) => void;
   applyFollowRemovedEvent: (payload: FollowEventPayload) => void;
+  reset: () => void;
 };
 
 function getCurrentUserId(): string | null {
@@ -48,6 +49,13 @@ export const useFollowStore = create<FollowState>((set, get) => ({
   followingCountByUser: {},
   pendingByTarget: {},
   pendingActionByTarget: {},
+  reset: () => set({
+    isFollowingByTarget: {},
+    followersCountByUser: {},
+    followingCountByUser: {},
+    pendingByTarget: {},
+    pendingActionByTarget: {},
+  }),
 
   hydrateRelationshipIfMissing: (targetUserId, isFollowing) => {
     const curr = get().isFollowingByTarget[targetUserId];

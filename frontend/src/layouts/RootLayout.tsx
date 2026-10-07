@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import { useThemeStore } from "../stores/themeStore";
 import { useAuthSync } from "../hooks/useAuthSync";
@@ -13,6 +13,7 @@ import { useFollowStore, type FollowEventPayload } from "@/stores/followStore";
 import { useSocketStore } from "@/stores/socketStore";
 
 export function RootLayout() {
+  const location = useLocation();
   // Sync auth state with Clerk
   useAuthSync();
   const { user, isLoading } = useAuthStore();
@@ -32,6 +33,21 @@ export function RootLayout() {
     initializeTheme();
     applyTheme();
   }, [initializeTheme, applyTheme]);
+
+  useEffect(() => {
+    const path = location.pathname;
+    const title = path === "/" || path === "/feed" ? "Quad | Your Campus, Connected"
+      : path.startsWith("/login") ? "Sign In | Quad"
+      : path.startsWith("/signup") ? "Create Account | Quad"
+      : path.startsWith("/polls") || path.includes("poll") ? "Polls | Quad"
+      : path.startsWith("/stories") || path.includes("story") ? "Stories | Quad"
+      : path.startsWith("/chat") ? "Chat | Quad"
+      : path.startsWith("/notifications") ? "Notifications | Quad"
+      : path.startsWith("/profile") ? "Profile | Quad"
+      : path.startsWith("/posts") ? "Post | Quad"
+      : "Page Not Found | Quad";
+    document.title = title;
+  }, [location.pathname]);
 
   // Socket feed + notifications join/leave and listeners
   useEffect(() => {

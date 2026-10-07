@@ -1,16 +1,18 @@
-import { useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useEffect, useRef } from "react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { useAuthStore } from "@/stores/authStore";
-import { useTokenManager } from "@/lib/tokens";
+import { useNotificationStore } from "@/stores/notificationStore";
+import { useFollowStore } from "@/stores/followStore";
+import { requestCache } from "@/lib/requestCache";
+import { rateLimitState } from "@/lib/api/rateLimitState";
 import { ProfileService } from "@/services/profileService";
-import { logAuthEvent, clearAuthData } from "@/lib/authAudit";
 import { logError } from "@/lib/errorHandling";
 
-// Custom hook to sync Clerk user with our auth store
 export function useAuthSync() {
   const { user: clerkUser, isLoaded } = useUser();
+  const { sessionId } = useAuth();
   const { syncWithClerk, setLoading, logout } = useAuthStore();
-  const { getAuthToken } = useTokenManager();
+  const previousIdentity = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -18,91 +20,47 @@ export function useAuthSync() {
       return;
     }
 
-    let isMounted = true;
+    const identity = clerkUser ? `${clerkUser.id}:${sessionId || ""}` : null;
+    if (previousIdentity.current !== identity) {
+      requestCache.clear();
+      rateLimitState.clear();
+      useNotificationStore.getState().reset();
+      useFollowStore.getState().reset();
+      previousIdentity.current = identity;
+    }
 
-    const syncTokenAndProfile = async () => {
-      try {
-        // If user is signed out, clear all auth data
-        if (!clerkUser) {
-          logAuthEvent("User signed out, clearing auth data");
-          clearAuthData();
-          logout();
-          setLoading(false);
-          return;
-        }
+    if (!clerkUser) {
+      logout();
+      return;
+    }
 
-        // Get fresh token
-        const token = await getAuthToken();
+    // Replace the previous account immediately, before its profile request resolves.
+    syncWithClerk(clerkUser);
+    let active = true;
+    void ProfileService.getProfileById(clerkUser.id)
+      .then((profile) => {
+        if (!active) return;
+        const current = useAuthStore.getState().user;
+        if (current?.clerkId !== clerkUser.id) return;
+        useAuthStore.getState().setUser({
+          ...current,
+          _id: profile._id,
+          firstName: profile.firstName || current.firstName,
+          lastName: profile.lastName || current.lastName,
+          profileImage: profile.profileImage || current.profileImage,
+          bio: profile.bio || current.bio,
+          isVerified: profile.isVerified || current.isVerified,
+        });
+      })
+      .catch((error) => {
+        logError(error, { component: "AuthSync", action: "syncProfileOnLogin", userId: clerkUser.id });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-        if (!token) {
-          logAuthEvent("Failed to get token for signed-in user");
-          // Don't clear auth data yet, might be temporary issue
-        } else {
-          logAuthEvent("Token synced successfully", { userId: clerkUser.id });
-        }
-
-        // Eagerly sync current user profile in backend via Clerk ID
-        let databaseProfile = null;
-        try {
-          if (clerkUser?.id) {
-            databaseProfile = await ProfileService.getProfileById(clerkUser.id);
-            logAuthEvent("Profile synced successfully", {
-              userId: clerkUser.id,
-            });
-          }
-        } catch (syncError) {
-          logError(syncError, {
-            component: "AuthSync",
-            action: "syncProfileOnLogin",
-            userId: clerkUser.id,
-          });
-          logAuthEvent("Profile sync failed", {
-            userId: clerkUser.id,
-            error: (syncError as Error).message,
-          });
-        }
-
-        if (!isMounted) {
-          return;
-        }
-
-        // Sync with Clerk first, then update with database profile data if available
-        syncWithClerk(clerkUser);
-
-        // If we have database profile data, update the auth store with it
-        if (databaseProfile) {
-          const { setUser } = useAuthStore.getState();
-          const currentUser = useAuthStore.getState().user;
-          if (currentUser) {
-            setUser({
-              ...currentUser,
-              _id: databaseProfile._id,
-              firstName: databaseProfile.firstName || currentUser.firstName,
-              lastName: databaseProfile.lastName || currentUser.lastName,
-              profileImage:
-                databaseProfile.profileImage || currentUser.profileImage,
-              bio: databaseProfile.bio || currentUser.bio,
-              isVerified: databaseProfile.isVerified || currentUser.isVerified,
-            });
-          }
-        }
-        setLoading(false);
-      } catch (error) {
-        logError(error, { component: "AuthSync", action: "syncTokenAndProfile" });
-        logAuthEvent("Auth sync error", { error: (error as Error).message });
-
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    syncTokenAndProfile();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [clerkUser, getAuthToken, isLoaded, setLoading, syncWithClerk, logout]);
+    return () => { active = false; };
+  }, [clerkUser, isLoaded, sessionId, setLoading, syncWithClerk, logout]);
 
   return { isLoaded };
 }

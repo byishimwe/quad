@@ -31,6 +31,6 @@ export const errorHandler = (
     ...(requestId && { requestId }),
     // Stack traces only shown when DEBUG_MODE explicitly enabled
     // Never expose stack traces based solely on NODE_ENV
-    ...(env.DEBUG_MODE === "true" && { stack: err.stack }),
+    ...(env.NODE_ENV !== "production" && env.DEBUG_MODE === "true" && { stack: err.stack }),
   });
 };

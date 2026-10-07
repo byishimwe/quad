@@ -1,5 +1,7 @@
 # Accessibility Audit Report
 
+> **HISTORICAL SNAPSHOT — superseded by [QUALITY_STATUS.md](QUALITY_STATUS.md).** Ratings, test counts, and readiness claims below describe an earlier review and are not current release-candidate evidence.
+
 ## Executive Summary
 
 This document provides a comprehensive accessibility audit of the Quad social platform, evaluating compliance with WCAG 2.1 AA standards.

@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { requestCache } from "@/lib/requestCache";
+import { rateLimitState } from "@/lib/api/rateLimitState";
 
 // Clerk user object interface - based on actual Clerk user structure
 interface ClerkUserObject {
@@ -45,8 +46,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isLoading: true,
       error: null,
@@ -58,6 +58,10 @@ export const useAuthStore = create<AuthState>()(
       syncWithClerk: (clerkUser) => {
         if (clerkUser && typeof clerkUser === "object") {
           const user = clerkUser as ClerkUserObject;
+          if (get().user?.clerkId !== user.id) {
+            requestCache.clear();
+            rateLimitState.clear();
+          }
           const userData: User = {
             _id: "", // Will be set after backend sync
             clerkId: user.id || "",
@@ -88,6 +92,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        requestCache.clear();
+        rateLimitState.clear();
         set({
           user: null,
           isLoading: false,
@@ -96,13 +102,5 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
-    }),
-    {
-      name: "quad-auth-storage",
-      partialize: () => ({
-        // Only persist minimal non-sensitive state, not user data
-        // This prevents user data lingering after logout and reduces XSS attack surface
-      }),
-    }
-  )
+    })
 );

@@ -1,56 +1,25 @@
-# 🚀 Quad Frontend
+# Quad frontend
 
-A modern social media frontend built with React, TypeScript, and cutting-edge technologies.
+The Quad web app presents posts, stories, polls, profiles, chat, and notifications. It uses React 19, TypeScript, Vite, React Router, Tailwind CSS, Clerk, Zustand, Axios, Socket.IO client, TipTap, Radix UI primitives, Framer Motion, Zod, React Hook Form, and Vitest.
 
-## ✨ Tech Stack
+## Start
 
-- **React 19** + **TypeScript** + **Vite** for modern development
-- **Tailwind CSS** + **DaisyUI** + **shadcn/ui** for beautiful UI
-- **Zustand** for simple state management
-- **React Router v7** for routing
-- **Axios** for API integration
-- **30+ Themes** with DaisyUI theme system
+Use Node.js 24.19.0. Copy `.env.example` to `.env` and set the Clerk publishable key, API URL, and Socket.IO URL. Start the backend and MongoDB first.
 
-## 🚀 Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
+```sh
+npm ci
 npm run dev
+```
 
-# Build for production
+The root `npm run setup` installs both packages. The Vite server normally opens at `http://localhost:5173`.
+
+## Check
+
+```sh
+npm run lint
+npm run typecheck
+npm test
 npm run build
 ```
 
-## 📁 Project Structure
-
-```
-src/
-├── components/     # UI components
-├── layouts/        # Page layouts
-├── lib/           # Utilities & API
-├── pages/         # Route pages
-├── routes/        # Router config
-└── stores/        # State management
-```
-
-## 🌈 Features
-
-- ✅ **30+ Themes** - Slack-like theme switching
-- ✅ **Responsive Design** - Mobile-first layouts
-- ✅ **Type Safety** - Full TypeScript support
-- ✅ **API Ready** - Pre-configured for Quad backend
-- ✅ **State Management** - Zustand stores setup
-- ✅ **Modern Stack** - Latest React ecosystem
-
-## 📖 Documentation
-
-- **Frontend docs**: `docs/README.md`
-- **Shared (full project) docs hub**: `../docs/README.md`
-- **Shared getting started**: `../docs/GETTING_STARTED.md`
-
----
-
-**Ready for Phase 2: Authentication & User Management! 🎯**
+`npm run build` writes `dist/`. Tests run with Vitest and React Testing Library. See the [frontend docs](docs/README.md), [shared docs](../docs/README.md), and [current quality status](../docs/QUALITY_STATUS.md).

@@ -23,8 +23,8 @@ const envSchema = z.object({
   SKIP_INDEX_CREATION: z.string().optional().default("false"),
   // Production-specific variables
   FRONTEND_URL: z.string().optional(),
-  SENTRY_DSN: z.string().optional(),
-  SENTRY_ENVIRONMENT: z.string().optional(),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+  ENABLE_API_DOCS: z.enum(["true", "false"]).default("false"),
   RATE_LIMIT_GENERAL_WINDOW_MS: z.coerce
     .number()
     .int()
@@ -54,7 +54,7 @@ const envSchema = z.object({
     .number()
     .int()
     .positive()
-    .default(1073741824),
+    .default(52_428_800), // 50 MiB: bounded social video uploads
   IMAGE_MAX_FILE_SIZE_BYTES: z.coerce
     .number()
     .int()

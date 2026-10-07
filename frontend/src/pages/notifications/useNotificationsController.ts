@@ -29,15 +29,6 @@ export function useNotificationsController({
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterTab>("all");
 
-  // Reset when filter changes
-  useEffect(() => {
-    setInitialLoading(true);
-    setError(null);
-    setPage(1);
-    setNotifications([]);
-    setHasMore(true);
-  }, [filter]);
-
   // Load notifications
   useEffect(() => {
     let cancelled = false;
@@ -136,9 +127,19 @@ export function useNotificationsController({
     if (!loading && hasMore) setPage((p) => p + 1);
   }, [hasMore, loading]);
 
-  const handleFilterChange = useCallback((tab: FilterTab) => {
-    setFilter(tab);
-  }, []);
+  const handleFilterChange = useCallback(
+    (tab: FilterTab) => {
+      if (tab === filter) return;
+
+      setInitialLoading(true);
+      setError(null);
+      setPage(1);
+      setNotifications([]);
+      setHasMore(true);
+      setFilter(tab);
+    },
+    [filter],
+  );
 
   const handleMarkAsRead = useCallback(
     async (notification: ApiNotification) => {

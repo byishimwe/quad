@@ -8,6 +8,7 @@ interface NotificationState {
   incrementUnread: (delta?: number) => void;
   decrementUnread: (delta?: number) => void;
   setUnreadCount: (count: number) => void;
+  reset: () => void;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -40,4 +41,5 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   setUnreadCount: (count: number) => {
     set({ unreadCount: count < 0 ? 0 : count });
   },
+  reset: () => set({ unreadCount: 0, isUnreadCountLoading: false }),
 }));

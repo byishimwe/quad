@@ -1,192 +1,32 @@
-# Environment Variables Documentation
+# Environment variables
 
-This document describes all environment variables used in the Quad platform.
+The maintained templates are [`frontend/.env.example`](../frontend/.env.example), [`frontend/.env.production.example`](../frontend/.env.production.example), [`backend/.env.example`](../backend/.env.example), and [`backend/.env.production.example`](../backend/.env.production.example). Copy the relevant example, set real values, and keep `.env` files out of version control.
 
-## Frontend Environment Variables
+## Frontend
 
-All frontend environment variables must be prefixed with `VITE_` to be exposed to the client.
+| Variable | Purpose |
+| --- | --- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Public Clerk key for the browser |
+| `VITE_API_BASE_URL` | Backend API URL including `/api` |
+| `VITE_SOCKET_URL` | Socket.IO server origin |
+| `VITE_CLERK_SIGN_IN_URL`, `VITE_CLERK_SIGN_UP_URL` | Auth routes |
+| `VITE_UPLOAD_TIMEOUT_MS`, `VITE_API_TIMEOUT_MS` | Client request timeouts |
 
-### Required Variables
+Only public settings belong in `VITE_` variables; Vite embeds them in the browser bundle.
 
-| Variable                     | Description                              | Example                        |
-| ---------------------------- | ---------------------------------------- | ------------------------------ |
-| `VITE_API_BASE_URL`          | Backend API base URL                     | `https://<API_DOMAIN>/api`     |
-| `VITE_SOCKET_URL`            | Socket.IO server URL                     | `https://<API_DOMAIN>`         |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for authentication | `pk_live_...` or `pk_test_...` |
+## Backend
 
-### Optional Variables
+| Variable | Purpose |
+| --- | --- |
+| `PORT`, `NODE_ENV` | Listener port and runtime mode |
+| `MONGODB_URI` | Database connection |
+| `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` | Authentication and webhook verification |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Media storage |
+| `FRONTEND_URL` | Allowed frontend origin |
+| `TRUST_PROXY_HOPS` | Number of trusted reverse proxies; default `0` |
+| `ENABLE_API_DOCS` | Opt in to Swagger in production; default `false` |
+| `UPLOAD_MAX_FILE_SIZE_BYTES`, `IMAGE_MAX_FILE_SIZE_BYTES` | File limits; defaults 50 MiB and 10 MiB |
+| `RATE_LIMIT_*` | Request quota windows and maxima; see the example file |
+| `SERVER_TIMEOUT_MS`, `CLOUDINARY_TIMEOUT_MS` | Request and media timeouts |
 
-| Variable                       | Description               | Default       | Example                     |
-| ------------------------------ | ------------------------- | ------------- | --------------------------- |
-| `VITE_CLERK_SIGN_IN_URL`       | Sign in page route        | `/login`      | `/login`                    |
-| `VITE_CLERK_SIGN_UP_URL`       | Sign up page route        | `/signup`     | `/signup`                   |
-| `VITE_CLERK_AFTER_SIGN_IN_URL` | Redirect after sign in    | `/`           | `/`                         |
-| `VITE_CLERK_AFTER_SIGN_UP_URL` | Redirect after sign up    | `/`           | `/`                         |
-| `VITE_ENABLE_PWA`              | Enable PWA features       | `false`       | `true`                      |
-| `VITE_ENABLE_NOTIFICATIONS`    | Enable push notifications | `false`       | `true`                      |
-| `VITE_NODE_ENV`                | Environment mode          | `development` | `production`                |
-| `VITE_SENTRY_DSN`              | Sentry error tracking DSN | -             | `https://...@sentry.io/...` |
-| `VITE_SENTRY_ENVIRONMENT`      | Sentry environment name   | -             | `production`                |
-| `VITE_UPLOAD_TIMEOUT_MS`       | File upload timeout       | `300000`      | `300000`                    |
-| `VITE_API_TIMEOUT_MS`          | API request timeout       | `10000`       | `10000`                     |
-
-### Configuration Files
-
-- **Development**: `.env` or `.env.development`
-- **Production**: `.env.production`
-- **Example**: `.env.example` and `.env.production.example` (templates with placeholders)
-
-## Backend Environment Variables
-
-### Required Variables
-
-| Variable                | Description                    | Example                                            |
-| ----------------------- | ------------------------------ | -------------------------------------------------- |
-| `NODE_ENV`              | Node environment               | `production` or `development`                      |
-| `PORT`                  | Server port                    | `4000`                                             |
-| `MONGODB_URI`           | MongoDB connection string      | `mongodb+srv://user:pass@cluster.mongodb.net/quad` |
-| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key          | `pk_live_...`                                      |
-| `CLERK_SECRET_KEY`      | Clerk secret key (server-side) | `sk_live_...`                                      |
-| `CLERK_WEBHOOK_SECRET`  | Clerk webhook signing secret   | `whsec_...`                                        |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name          | `<CLOUDINARY_CLOUD_NAME>`                          |
-| `CLOUDINARY_API_KEY`    | Cloudinary API key             | `123456789012345`                                  |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret          | `abcdefghijklmnopqrstuvwxyz`                       |
-
-### Optional Variables
-
-| Variable                     | Description                             | Default | Example                          |
-| ---------------------------- | --------------------------------------- | ------- | -------------------------------- |
-| `FRONTEND_URL`               | Frontend application URL (for CORS)     | `*`     | `https://<YOUR_FRONTEND_DOMAIN>` |
-| `SENTRY_DSN`                 | Sentry error tracking DSN               | -       | `https://...@sentry.io/...`      |
-| `SENTRY_ENVIRONMENT`         | Sentry environment name                 | -       | `production`                     |
-| `SKIP_INDEX_CREATION`        | Skip database index creation on startup | `false` | `true`                           |
-| `RATE_LIMIT_*_WINDOW_MS`     | Rate limiting windows (e.g. GENERAL)    | -       | `60000`                          |
-| `RATE_LIMIT_*_MAX`           | Rate limiting max requests per window   | -       | `500`                            |
-| `SERVER_TIMEOUT_MS`          | Global HTTP server request timeout      | -       | `300000`                         |
-| `UPLOAD_MAX_FILE_SIZE_BYTES` | Max overall file size for multer        | -       | `1073741824`                     |
-| `IMAGE_MAX_FILE_SIZE_BYTES`  | Max size for image files                | -       | `10485760`                       |
-| `CLOUDINARY_TIMEOUT_MS`      | Cloudinary upload connection timeout    | -       | `300000`                         |
-| `SOCKET_PING_TIMEOUT_MS`     | Socket.IO connection ping timeout       | -       | `60000`                          |
-| `SOCKET_PING_INTERVAL_MS`    | Socket.IO connection ping interval      | -       | `25000`                          |
-
-### Configuration Files
-
-- **Development**: `.env`
-- **Production**: `.env.production`
-- **Example**: `.env.example` and `.env.production.example` (templates with placeholders)
-
-## Environment Setup Instructions
-
-### Development Setup
-
-1. **Frontend**:
-
-   ```bash
-   cd frontend
-   cp .env.example .env
-   # Edit .env and fill in your development values
-   ```
-
-2. **Backend**:
-   ```bash
-   cd backend
-   cp .env.example .env
-   # Edit .env and fill in your development values
-   ```
-
-### Production Setup
-
-1. **Frontend**:
-
-   ```bash
-   cd frontend
-   cp .env.example .env.production
-   # Edit .env.production with production values
-   ```
-
-2. **Backend**:
-   ```bash
-   cd backend
-   cp .env.example .env.production
-   # Edit .env.production with production values
-   ```
-
-## Getting API Keys
-
-### Clerk Authentication
-
-1. Sign up at [clerk.com](https://clerk.com)
-2. Create a new application
-3. Copy the publishable key and secret key from the dashboard
-4. For webhooks, create a webhook endpoint and copy the signing secret
-
-### Cloudinary Media Storage
-
-1. Sign up at [cloudinary.com](https://cloudinary.com)
-2. Navigate to the dashboard
-3. Copy your cloud name, API key, and API secret
-
-### MongoDB Database
-
-**Development**: Use local MongoDB or MongoDB Atlas free tier
-
-**Production**: Use MongoDB Atlas or your preferred MongoDB hosting
-
-1. Create a cluster at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-2. Create a database user
-3. Whitelist your application's IP addresses
-4. Copy the connection string
-
-### Sentry Error Tracking (Optional)
-
-1. Sign up at [sentry.io](https://sentry.io)
-2. Create a new project
-3. Copy the DSN from project settings
-
-## Security Best Practices
-
-1. **Never commit `.env` files** - They are in `.gitignore` by default
-2. **Use different keys for development and production**
-3. **Rotate secrets regularly** in production
-4. **Use environment variables in CI/CD** - Don't hardcode secrets
-5. **Restrict CORS origins** in production - Don't use `*`
-6. **Use HTTPS** in production for all API calls
-7. **Enable rate limiting** to prevent abuse
-8. **Monitor error logs** for suspicious activity
-
-## Validation
-
-The application validates environment variables on startup:
-
-- **Frontend**: Uses `src/lib/envValidation.ts` to validate required variables
-- **Backend**: Uses Zod schema in `src/config/env.config.ts` to validate
-
-If required variables are missing, the application will fail to start with a clear error message listing the missing variables.
-
-## Troubleshooting
-
-### "Missing required environment variables" error
-
-- Check that all required variables are set in your `.env` file
-- Ensure variable names are spelled correctly
-- For frontend variables, ensure they start with `VITE_`
-- Restart the development server after changing `.env` files
-
-### CORS errors in production
-
-- Set `FRONTEND_URL` in backend `.env.production`
-- Ensure the URL matches your frontend domain exactly
-- Include protocol (https://) and no trailing slash
-
-### Clerk authentication not working
-
-- Verify publishable key matches your Clerk application
-- Check that secret key is correct (backend only)
-- Ensure webhook secret matches your Clerk webhook configuration
-- Verify redirect URLs are configured in Clerk dashboard
-
-### Cloudinary uploads failing
-
-- Verify all three Cloudinary credentials are correct
-- Check that your Cloudinary account is active
-- Ensure upload presets are configured if using unsigned uploads
+The example files are the authoritative list for optional settings and defaults. Quad has no Sentry integration; adding a DSN has no effect.

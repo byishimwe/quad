@@ -9,6 +9,8 @@ This document describes how testing is structured in the Quad monorepo.
 
 ## Running tests
 
+Run `npm test` from the repository root to execute both frontend and backend suites. Run `npm run check` for the full lint, typecheck, test, and build gate.
+
 ### Frontend
 
 From repo root:

@@ -195,7 +195,7 @@ export class UploadService {
   } {
     const maxSizes = {
       image: 10 * 1024 * 1024, // 10MB
-      video: 1024 * 1024 * 1024, // 1GB
+      video: 50 * 1024 * 1024, // Matches backend's 50 MiB default
       profileImage: 10 * 1024 * 1024, // 10MB
       coverImage: 10 * 1024 * 1024, // 10MB
     };
@@ -245,7 +245,7 @@ export class UploadService {
 
     if (file.type.startsWith("video/")) {
       maxSize = maxSizes.video;
-      sizeLabel = "1GB";
+      sizeLabel = "50MB";
     } else {
       maxSize = maxSizes.image;
       sizeLabel = "10MB";

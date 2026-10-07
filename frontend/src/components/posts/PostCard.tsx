@@ -89,9 +89,7 @@ export function PostCard({
 
   return (
     <>
-      <motion.div
-        whileHover={{ y: -4, transition: { duration: 0.2 } }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}>
+      <motion.div>
         <Card
           className={cn(
             "w-full bg-card border border-border/40 rounded-[2rem] overflow-hidden transition-all duration-300",

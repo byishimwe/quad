@@ -116,10 +116,10 @@ export function useProfilePageController({
   // Check if this is the current user's profile
   const isOwnProfile = currentUser?.username === username;
 
-  useEffect(() => {
-    if (activeTab !== "saved") return;
-    setSavedTab("posts");
-  }, [activeTab]);
+  const selectActiveTab = (tab: ProfileTab) => {
+    if (tab === "saved") setSavedTab("posts");
+    setActiveTab(tab);
+  };
 
   // Real API calls to fetch profile data
   useEffect(() => {
@@ -245,6 +245,8 @@ export function useProfilePageController({
 
   useEffect(() => {
     if (!isOwnProfile || authLoading) {
+      // Clear a previous account's count when switching profile ownership.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBookmarksCount(0);
       return;
     }
@@ -1144,7 +1146,7 @@ export function useProfilePageController({
 
   return {
     activeTab,
-    setActiveTab,
+    setActiveTab: selectActiveTab,
     savedTab,
     setSavedTab,
     user,

@@ -105,6 +105,8 @@ export function FollowersModal({
   const loadUsers = useCallback(
     async (pageToLoad: number = 1) => {
       if (pageToLoad === 1) {
+        setUsers([]);
+        setPage(1);
         setIsLoading(true);
       } else {
         setIsLoadingMore(true);
@@ -152,8 +154,8 @@ export function FollowersModal({
   // Load users when modal opens
   useEffect(() => {
     if (isOpen) {
-      setUsers([]);
-      setPage(1);
+      // This loads remote data when the modal opens; loading state is set by loadUsers.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadUsers(1);
     }
   }, [isOpen, loadUsers]);

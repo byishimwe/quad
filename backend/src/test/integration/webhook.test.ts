@@ -1,7 +1,22 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestApp } from "../utils/testApp.js";
+import { User } from "../../models/User.model.js";
+import { Post } from "../../models/Post.model.js";
+import { Story } from "../../models/Story.model.js";
+import { Poll } from "../../models/Poll.model.js";
+
+const { deleteOwnedAssets } = vi.hoisted(() => ({
+  deleteOwnedAssets: vi.fn(async () => 0),
+}));
+
+vi.mock("../../utils/upload.util.js", async (importOriginal) => {
+  const original = await importOriginal<
+    typeof import("../../utils/upload.util.js")
+  >();
+  return { ...original, deleteOwnedAssets };
+});
 
 const sendWebhook = async (payload: unknown, headers?: Record<string, string>) => {
   const app = createTestApp();
@@ -22,6 +37,11 @@ const sendWebhook = async (payload: unknown, headers?: Record<string, string>) =
 };
 
 describe("Webhook API", () => {
+  beforeEach(() => {
+    deleteOwnedAssets.mockReset();
+    deleteOwnedAssets.mockResolvedValue(0);
+  });
+
   it("accepts user.created and creates user", async () => {
     const payload = {
       type: "user.created",
@@ -119,6 +139,80 @@ describe("Webhook API", () => {
     expect(getRes.status).toBe(404);
   });
 
+  it("removes account references before cleaning up owned media", async () => {
+    const userId = "wh_cleanup_order";
+    const mediaUrl =
+      "https://res.cloudinary.com/cloud/image/upload/v1/quad/stories/account.png";
+    const author = {
+      clerkId: userId,
+      username: "cleanup-order",
+      email: "cleanup@example.com",
+    };
+
+    await User.create({ ...author });
+    await Post.create({ userId, author, text: "Post", media: [] });
+    await Story.create({
+      userId,
+      author,
+      title: "Story",
+      content: "Story content",
+      coverImage: mediaUrl,
+      status: "published",
+    });
+    await Poll.create({
+      author,
+      question: "Is cleanup ordered correctly?",
+      questionMedia: { url: mediaUrl, type: "image" },
+      options: [
+        { text: "Yes", votesCount: 0 },
+        { text: "No", votesCount: 0 },
+      ],
+      settings: { anonymousVoting: false },
+      status: "active",
+      totalVotes: 0,
+      reactionsCount: 0,
+    });
+
+    deleteOwnedAssets.mockImplementationOnce(async () => {
+      const references = await Promise.all([
+        User.exists({ clerkId: userId }),
+        Post.exists({ "author.clerkId": userId }),
+        Story.exists({ "author.clerkId": userId }),
+        Poll.exists({ "author.clerkId": userId }),
+      ]);
+      expect(references.every((reference) => reference === null)).toBe(true);
+      return 0;
+    });
+
+    const response = await sendWebhook({
+      type: "user.deleted",
+      data: { id: userId },
+    });
+
+    expect(response.status).toBe(200);
+    expect(deleteOwnedAssets).toHaveBeenCalledWith(userId);
+  });
+
+  it("returns an error so failed account media cleanup can be retried", async () => {
+    const userId = "wh_cleanup_retry";
+    await User.create({
+      clerkId: userId,
+      username: "cleanup-retry",
+      email: "cleanup-retry@example.com",
+    });
+    const payload = { type: "user.deleted", data: { id: userId } };
+
+    deleteOwnedAssets.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
+
+    const failed = await sendWebhook(payload);
+    expect(failed.status).toBe(500);
+    expect(await User.exists({ clerkId: userId })).toBeNull();
+
+    const retried = await sendWebhook(payload);
+    expect(retried.status).toBe(200);
+    expect(deleteOwnedAssets).toHaveBeenCalledTimes(2);
+  });
+
   it("rejects invalid signature", async () => {
     const payload = {
       type: "user.created",
@@ -134,5 +228,25 @@ describe("Webhook API", () => {
 
     expect(res.status).toBe(400);
     expect(res.body?.error).toBe("Invalid webhook signature");
+    expect(res.body?.details).toBeUndefined();
+  });
+
+  it("accepts repeated user.created delivery without duplicating the user", async () => {
+    const payload = {
+      type: "user.created",
+      data: { id: "wh_repeat", username: "repeat", email_addresses: [{ email_address: "repeat@example.com" }] },
+    };
+    expect((await sendWebhook(payload)).status).toBe(200);
+    expect((await sendWebhook(payload)).status).toBe(200);
+    expect(await User.countDocuments({ clerkId: "wh_repeat" })).toBe(1);
+  });
+
+  it("gives a second user a unique username when Clerk names collide", async () => {
+    const first = { type: "user.created", data: { id: "wh_first", username: "shared", email_addresses: [{ email_address: "first@example.com" }] } };
+    const second = { type: "user.created", data: { id: "wh_second", username: "shared", email_addresses: [{ email_address: "second@example.com" }] } };
+    expect((await sendWebhook(first)).status).toBe(200);
+    expect((await sendWebhook(second)).status).toBe(200);
+    const users = await User.find({ clerkId: { $in: ["wh_first", "wh_second"] } }).lean();
+    expect(new Set(users.map((user) => user.username)).size).toBe(2);
   });
 });

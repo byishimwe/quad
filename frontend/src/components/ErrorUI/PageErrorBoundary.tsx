@@ -36,42 +36,10 @@ export interface PageErrorBoundaryProps {
 }
 
 /**
- * Logs error to error reporting service
- * In production, this would send to a service like Sentry, LogRocket, etc.
+ * Log locally until a real error reporting service is configured.
  */
 function logErrorToService(error: Error, errorInfo: React.ErrorInfo): void {
-  // In development, just log to console
-  if (import.meta.env.DEV) {
-    console.error("Page Error:", {
-      error,
-      errorInfo,
-      timestamp: new Date().toISOString(),
-    });
-    return;
-  }
-
-  // In production, send to error reporting service
-  try {
-    // TODO: Integrate with actual error reporting service (e.g., Sentry)
-    // Example:
-    // Sentry.captureException(error, {
-    //   contexts: {
-    //     react: {
-    //       componentStack: errorInfo.componentStack,
-    //     },
-    //   },
-    // });
-    
-    console.error("Page Error (would be sent to error service):", {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (loggingError) {
-    // Fail silently if logging fails
-    console.error("Failed to log error to service:", loggingError);
-  }
+  console.error("Page Error:", error, errorInfo);
 }
 
 export function PageErrorBoundary({

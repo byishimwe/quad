@@ -37,6 +37,7 @@ export default function CreateStoryPage() {
     if (!editor) return;
 
     const update = () => {
+      if (editor.isDestroyed) return;
       setEditorHtml(editor.getHTML());
     };
 
@@ -81,12 +82,6 @@ export default function CreateStoryPage() {
 
     return () => clearInterval(autoSaveInterval);
   }, [canSubmit, submitting, autoSaving, title, coverImage, editor]);
-
-  useEffect(() => {
-    return () => {
-      editor?.destroy();
-    };
-  }, [editor]);
 
   const handleInsertLink = () => {
     if (!editor) return;

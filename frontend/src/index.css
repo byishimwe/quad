@@ -224,6 +224,20 @@
   }
 }
 
+@layer components {
+  /* Inner fields use their surrounding container for the visible focus state.
+     This rule must win over the global *:focus-visible ring so the outer
+     container's focus-within treatment is the only visible focus indicator. */
+  .seamless-field,
+  .seamless-field:focus,
+  .seamless-field:focus-visible {
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    ring: none;
+  }
+}
+
 @layer utilities {
   /* Page transition utilities */
   .page-transition {
@@ -362,10 +376,4 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-*:focus,
-*:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
 }

@@ -64,7 +64,7 @@ export const uploadSingle = multer({
 
 // Multer config for multiple files upload (max 10 files)
 // Uses diskStorage instead of memoryStorage to prevent memory exhaustion
-// Each file up to 1GB, streamed to disk rather than RAM
+// Files are written to disk, with a bounded limit from environment config.
 export const uploadMultiple = multer({
   storage: diskStorage,
   fileFilter,

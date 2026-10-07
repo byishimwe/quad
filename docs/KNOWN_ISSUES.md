@@ -1,5 +1,7 @@
 # Known Issues
 
+> **HISTORICAL SNAPSHOT — superseded by [QUALITY_STATUS.md](QUALITY_STATUS.md).** Ratings, test counts, and readiness claims below describe an earlier review and are not current release-candidate evidence.
+
 This document tracks known issues and bugs in the Quad application.
 
 ## Test Failures

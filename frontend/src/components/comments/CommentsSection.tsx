@@ -198,6 +198,7 @@ export function CommentsSection({
 
   useEffect(() => {
     // reset when content changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setComments([]);
     setCursor({ skip: 0, limit: initialPageSize, hasMore: true });
     setTotal(null);

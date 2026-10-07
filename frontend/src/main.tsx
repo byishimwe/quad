@@ -5,6 +5,7 @@ import "./index.css";
 import "./styles/tiptap.css";
 import App from "./App.tsx";
 import { ErrorBoundary } from "./components/ui/error-boundary";
+import { MotionConfig } from "framer-motion";
 
 // Get Clerk publishable key
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -21,9 +22,11 @@ createRoot(document.getElementById("root")!).render(
       signUpUrl="/signup"
       signInFallbackRedirectUrl="/"
       signUpFallbackRedirectUrl="/">
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
+      <MotionConfig reducedMotion="user">
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </MotionConfig>
     </ClerkProvider>
   </StrictMode>,
 );

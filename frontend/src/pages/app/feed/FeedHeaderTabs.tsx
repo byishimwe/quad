@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { FeedTab, FeedType } from "@/types/feed";
 
 export function FeedHeaderTabs({
@@ -13,6 +13,7 @@ export function FeedHeaderTabs({
   onFeedTypeChange: (next: FeedType) => void;
   onTabChange: (next: FeedTab) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
       {/* Feed type selector with sliding indicator */}
@@ -28,9 +29,10 @@ export function FeedHeaderTabs({
             <button
               key={value}
               type="button"
+              aria-pressed={isActive}
               onClick={() => onFeedTypeChange(value)}
               className={cn(
-                "relative px-3 py-1.5 sm:px-5 text-sm font-bold rounded-full transition-colors duration-200 z-10",
+                "relative min-h-11 px-3 py-1.5 sm:px-5 text-sm font-bold rounded-full transition-colors duration-200 z-10",
                 isActive
                   ? "text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground",
@@ -39,7 +41,7 @@ export function FeedHeaderTabs({
                 <motion.div
                   layoutId="feedTypeIndicator"
                   className="absolute inset-0 bg-primary rounded-full shadow-md shadow-primary/20"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  transition={reducedMotion ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
               <span className="relative z-10">{label}</span>
@@ -62,9 +64,10 @@ export function FeedHeaderTabs({
             <button
               key={value}
               type="button"
+              aria-pressed={isActive}
               onClick={() => onTabChange(value)}
               className={cn(
-                "relative px-2.5 py-1.5 sm:px-4 text-sm font-bold rounded-xl transition-colors duration-200 z-10",
+                "relative min-h-11 px-2.5 py-1.5 sm:px-4 text-sm font-bold rounded-xl transition-colors duration-200 z-10",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",
@@ -73,7 +76,7 @@ export function FeedHeaderTabs({
                 <motion.div
                   layoutId="feedTabIndicator"
                   className="absolute inset-0 bg-background rounded-xl shadow-sm border border-border/40"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  transition={reducedMotion ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
               <span className="relative z-10">{label}</span>

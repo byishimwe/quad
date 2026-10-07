@@ -6,6 +6,7 @@
 import type { CorsOptions } from "cors";
 import { env } from "./env.config.js";
 import { logger } from "../utils/logger.util.js";
+import { AppError } from "../utils/appError.util.js";
 
 /**
  * Get allowed origins based on environment
@@ -35,54 +36,59 @@ export function getAllowedOrigins(): string[] {
 /**
  * Express CORS options
  */
-export const corsOptions: CorsOptions = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void,
-  ) => {
-    // Reject null origin in production (security risk)
-    if (!origin) {
-      if (env.NODE_ENV === "production") {
-        return callback(new Error("Null origin not allowed in production"));
+export function createCorsOptions(
+  production: boolean,
+  allowedOrigins: string[],
+): CorsOptions {
+  return {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Origin is absent on legitimate non-browser requests (webhooks, probes, CLI).
+      if (!origin) {
+        return callback(null, true);
       }
-      return callback(null, true);
-    }
 
-    const allowedOrigins = getAllowedOrigins();
-
-    // In production, strictly check allowed origins
-    if (env.NODE_ENV === "production") {
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
+      // In production, strictly check allowed origins
+      if (production) {
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          logger.warn(`CORS blocked request from origin: ${origin}`);
+          callback(new AppError("Origin not allowed by CORS", 403));
+        }
       } else {
-        logger.warn(`CORS blocked request from origin: ${origin}`);
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
+        // In development, allow all origins for easier testing
+        callback(null, true);
       }
-    } else {
-      // In development, allow all origins for easier testing
-      callback(null, true);
-    }
-  },
-  credentials: true, // Allow cookies and authorization headers
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-    "x-retry-count",
-  ],
-  exposedHeaders: [
-    "X-Total-Count",
-    "X-Page-Count",
-    "X-RateLimit-Limit",
-    "X-RateLimit-Remaining",
-    "X-RateLimit-Reset",
-  ],
-  maxAge: 86400, // 24 hours - how long browsers can cache preflight results
-  optionsSuccessStatus: 204, // Some legacy browsers choke on 204
-};
+    },
+    credentials: true, // Allow cookies and authorization headers
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+      "x-retry-count",
+    ],
+    exposedHeaders: [
+      "X-Total-Count",
+      "X-Page-Count",
+      "X-RateLimit-Limit",
+      "X-RateLimit-Remaining",
+      "X-RateLimit-Reset",
+    ],
+    maxAge: 86400, // 24 hours - how long browsers can cache preflight results
+    optionsSuccessStatus: 204, // Some legacy browsers choke on 204
+  };
+}
+
+export const corsOptions: CorsOptions = createCorsOptions(
+  env.NODE_ENV === "production",
+  getAllowedOrigins(),
+);
 
 /**
  * Socket.IO CORS options

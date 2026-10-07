@@ -1,5 +1,7 @@
 # Final Review and Sign-Off Report
 
+> **HISTORICAL SNAPSHOT — superseded by [QUALITY_STATUS.md](QUALITY_STATUS.md).** Ratings, test counts, and readiness claims below describe an earlier review and are not current release-candidate evidence.
+
 **Project**: Quad Social Platform - Production Readiness  
 **Review Date**: December 1, 2025  
 **Reviewer**: Development Team  

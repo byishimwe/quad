@@ -14,11 +14,6 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import * as fc from "fast-check";
 
-// Mock auth audit
-vi.mock("@/lib/authAudit", () => ({
-  logAuthEvent: vi.fn(),
-}));
-
 // Test component that should be protected
 function ProtectedContent() {
   return <div data-testid="protected-content">Protected Content</div>;

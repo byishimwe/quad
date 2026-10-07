@@ -4,7 +4,7 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { RightPanel } from "../components/layout/RightPanel";
 import { useAuthStore } from "@/stores/authStore";
 import { MainAppSkeleton } from "@/components/ui/loading";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MobileMoreMenu } from "../components/layout/MobileMoreMenu";
 import {
   PiHouseBold,
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 export function MainLayout() {
   const { isLoading } = useAuthStore();
   const location = useLocation();
+  const reducedMotion = useReducedMotion();
 
   const isChatRoute =
     location.pathname === "/chat" ||
@@ -63,10 +64,10 @@ export function MainLayout() {
                 <motion.div
                   key={location.pathname}
                   className={isChatRoute ? "h-full" : undefined}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: reducedMotion ? 0 : 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}>
+                  exit={{ opacity: 0, y: reducedMotion ? 0 : -4 }}
+                  transition={{ duration: reducedMotion ? 0 : 0.15, ease: "easeOut" }}>
                   <Outlet />
                 </motion.div>
               </AnimatePresence>
