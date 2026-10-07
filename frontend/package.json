@@ -1,20 +1,23 @@
 {
   "name": "quad",
   "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:production": "tsc -b && vite build --mode production",
-    "build:analyze": "tsc -b && vite build --mode production && npx vite-bundle-visualizer",
+    "build:analyze": "tsc -b && vite-bundle-visualizer -t raw-data -o dist/stats.json",
     "lint": "eslint .",
     "preview": "vite preview",
     "preview:production": "vite preview --mode production",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "typecheck": "tsc -b --noEmit && npm run lint"
+    "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.55.0",
@@ -23,7 +26,6 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-slot": "^1.2.4",
-    "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-virtual": "^3.13.12",
     "@tiptap/extension-image": "^3.11.1",
     "@tiptap/extension-link": "^3.11.1",
@@ -54,6 +56,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -61,7 +64,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
-    "@vitest/ui": "^3.2.4",
+    "@vitest/ui": "^5.0.3",
     "autoprefixer": "^10.4.22",
     "axios-mock-adapter": "^2.1.0",
     "baseline-browser-mapping": "^2.9.14",
@@ -71,12 +74,13 @@
     "fast-check": "^4.3.0",
     "globals": "^16.5.0",
     "jsdom": "^27.0.1",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.18",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^3.4.19",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.3",
     "vite": "^7.2.2",
+    "vite-bundle-visualizer": "^1.2.1",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^3.2.4"
+    "vitest": "^5.0.3"
   }
 }

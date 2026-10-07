@@ -1,11 +1,13 @@
 {
   "name": "quad",
   "private": true,
+  "engines": { "node": ">=24 <25" },
   "scripts": {
-    "lint": "npm --prefix frontend run lint",
+    "setup": "npm --prefix backend ci && npm --prefix frontend ci",
+    "lint": "npm --prefix frontend run lint && npm --prefix backend run lint",
     "typecheck": "npm --prefix frontend run typecheck && npm --prefix backend run typecheck",
-    "test": "npm --prefix frontend run test",
+    "test": "npm --prefix frontend run test && npm --prefix backend run test:run",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
-    "install": "npm --prefix backend install && npm --prefix frontend install"
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
   }
 }

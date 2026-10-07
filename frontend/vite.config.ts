@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: "autoUpdate",
-        includeAssets: ["logo.png"],
+        includeAssets: ["favicon-32.png", "favicon-64.png", "apple-touch-icon.png", "og-preview.png"],
         manifest: {
           name: "Quad",
           short_name: "Quad",
@@ -24,30 +24,10 @@ export default defineConfig(({ mode }) => {
           display: "standalone",
           start_url: "/",
           icons: [
-            {
-              src: "/logo.png",
-              sizes: "32x32",
-              type: "image/png",
-              purpose: "any",
-            },
-            {
-              src: "/logo.png",
-              sizes: "64x64",
-              type: "image/png",
-              purpose: "any",
-            },
-            {
-              src: "/logo.png",
-              sizes: "192x192",
-              type: "image/png",
-              purpose: "any maskable",
-            },
-            {
-              src: "/logo.png",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "any maskable",
-            },
+            { src: "/pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "/pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: "/pwa-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+            { src: "/pwa-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         },
       }),
@@ -72,14 +52,21 @@ export default defineConfig(({ mode }) => {
             ],
             "form-vendor": ["react-hook-form", "zod", "@hookform/resolvers"],
             "editor-vendor": ["@tiptap/react", "@tiptap/starter-kit"],
+            "motion-vendor": ["framer-motion"],
+            "content-vendor": [
+              "dompurify",
+              "react-hot-toast",
+              "react-icons",
+              "tailwind-merge",
+            ],
             utils: ["axios", "socket.io-client", "zustand"],
           },
         },
       },
       // Enable minification
       minify: isProduction ? "esbuild" : false,
-      // Generate source maps for debugging (hidden in production)
-      sourcemap: isProduction ? "hidden" : true,
+      // No production consumer is configured for source maps.
+      sourcemap: false,
       // Target modern browsers for smaller bundle
       target: "es2020",
       // Optimize CSS
@@ -87,8 +74,6 @@ export default defineConfig(({ mode }) => {
       cssMinify: isProduction,
       // Report compressed size
       reportCompressedSize: true,
-      // Increase warning limit for large chunks
-      chunkSizeWarningLimit: 1000,
     },
     // Optimize dependencies
     optimizeDeps: {
@@ -101,8 +86,6 @@ export default defineConfig(({ mode }) => {
         "zustand",
         "@tiptap/react",
         "@tiptap/starter-kit",
-        "fast-deep-equal",
-        "fast-deep-equal/es6/react.js",
       ],
       // Exclude large dependencies that should be loaded on demand
       exclude: [],

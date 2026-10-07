@@ -48,8 +48,4 @@ coverage/
 # Temporary files
 tmp/
 temp/
-
-# Locks (following project pattern of ignoring them)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+.freebuff/

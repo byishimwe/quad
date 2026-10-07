@@ -1,11 +1,13 @@
 {
   "name": "quad-api",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "type": "module",
   "scripts": {
     "dev": "tsx src/server.ts",
     "dev:tunnel": "node start-dev-with-tunnel.js",
-    "dev:simple": "concurrently \"npm run dev\" \"ngrok http 4000\"",
     "tunnel": "ngrok http 4000",
     "build": "tsc",
     "build:production": "NODE_ENV=production tsc",
@@ -15,7 +17,7 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "vitest run --maxWorkers=2",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -50,7 +52,6 @@
     "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
-    "concurrently": "^9.2.1",
     "eslint": "^9.0.0",
     "globals": "^15.0.0",
     "mongodb-memory-server": "^10.1.4",
@@ -58,6 +59,6 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^3.2.4"
+    "vitest": "^5.0.3"
   }
 }
