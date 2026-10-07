@@ -85,6 +85,7 @@ export default function EditPollPage() {
 
   useEffect(() => {
     if (!id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError("Poll ID is required");
       setLoading(false);
       return;

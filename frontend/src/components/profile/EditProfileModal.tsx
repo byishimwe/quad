@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import type { ChangeEvent } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -81,7 +81,7 @@ export function EditProfileModal({
     handleSubmit,
     formState: { errors, isSubmitting, isDirty },
     reset,
-    watch,
+    control,
   } = useForm<EditProfileFormData>({
     resolver: zodResolver(editProfileSchema),
     defaultValues: {
@@ -116,7 +116,7 @@ export function EditProfileModal({
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Watch bio for character count
-  const bioValue = watch("bio") || "";
+  const bioValue = useWatch({ control, name: "bio" }) || "";
 
   // Handle profile image upload
   const handleProfileImageChange = async (

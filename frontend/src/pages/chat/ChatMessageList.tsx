@@ -68,7 +68,7 @@ const linkifyText = (text: string) => {
           href={part}
           target="_blank"
           rel="noreferrer noopener"
-          className="underline underline-offset-2 text-primary hover:text-primary/80 break-all font-medium">
+          className="underline underline-offset-2 text-primary hover:text-primary/80 break-words font-medium">
           {part}
         </a>
       );
@@ -313,7 +313,7 @@ export const ChatMessageList = memo(function ChatMessageList({
 
                         <div className={cn(bubbleClass, "overflow-hidden")}>
                           {m.text && (
-                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-all">
+                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
                               {linkifyText(m.text)}
                             </div>
                           )}
@@ -369,7 +369,7 @@ export const ChatMessageList = memo(function ChatMessageList({
                 const showAvatar = startsNewGroup;
                 const showHeader = startsNewGroup;
                 const bubbleBase =
-                  "relative w-fit max-w-full break-all rounded-2xl px-4 py-2.5 shadow-sm transition-all duration-200";
+                  "relative w-fit max-w-full break-words rounded-2xl px-4 py-2.5 shadow-sm transition-all duration-200";
 
                 return (
                   <div
@@ -395,7 +395,7 @@ export const ChatMessageList = memo(function ChatMessageList({
                             bubbleBase,
                             "bg-primary/50 text-primary-foreground rounded-[1.25rem] rounded-tr-lg overflow-hidden",
                           )}>
-                          <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-all relative z-10">
+                          <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words relative z-10">
                             {pendingOutgoingText}
                           </div>
                           {/* Shimmer sweep */}
@@ -431,8 +431,8 @@ export const ChatMessageList = memo(function ChatMessageList({
           <div className="pt-1">
             <div className="flex items-start gap-3 justify-end">
               <div className="flex flex-col max-w-[75%] min-w-0 items-end">
-                <div className="relative w-fit max-w-full break-all rounded-[1.25rem] rounded-tr-lg px-4 py-2.5 shadow-sm bg-primary/50 text-primary-foreground overflow-hidden">
-                  <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-all relative z-10">
+                <div className="relative w-fit max-w-full break-words rounded-[1.25rem] rounded-tr-lg px-4 py-2.5 shadow-sm bg-primary/50 text-primary-foreground overflow-hidden">
+                  <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words relative z-10">
                     {pendingOutgoingText}
                   </div>
                   <div className="absolute inset-0 -translate-x-full animate-[shimmer-sweep_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />

@@ -26,7 +26,6 @@ export default function ChatPage() {
 
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [originalEditText, setOriginalEditText] = useState("");
   const [confirmDiscardEdit, setConfirmDiscardEdit] = useState(false);
 
   const [pendingOutgoingText, setPendingOutgoingText] = useState<string | null>(
@@ -135,7 +134,6 @@ export default function ChatPage() {
   const handleCancelEdit = useCallback(() => {
     setEditingId(null);
     setEditText("");
-    setOriginalEditText("");
     setConfirmDiscardEdit(false);
   }, [setEditText, setEditingId]);
 
@@ -149,6 +147,9 @@ export default function ChatPage() {
     }
   }, [editingId, handleSaveEdit]);
 
+  const originalEditText = editingId
+    ? messages.find((message) => message.id === editingId)?.text || ""
+    : "";
   const hasEditChanges =
     editingId !== null && editText.trim() !== originalEditText.trim();
   const canSaveEdit =
@@ -166,12 +167,10 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!editingId) return;
-    const original = messages.find((m) => m.id === editingId)?.text || "";
-    setOriginalEditText(original);
     requestAnimationFrame(() => {
       editTextareaRef.current?.focus();
     });
-  }, [editingId, messages]);
+  }, [editingId]);
 
   const { text, sending, handleTextChange, handleSend } = useChatComposer({
     emitTypingStart,
@@ -252,7 +251,7 @@ export default function ChatPage() {
                   <div className="text-[10px] uppercase tracking-[0.1em] font-bold text-muted-foreground/50">
                     Original
                   </div>
-                  <div className="mt-1.5 text-sm text-muted-foreground/70 whitespace-pre-wrap break-all leading-relaxed">
+                  <div className="mt-1.5 text-sm text-muted-foreground/70 whitespace-pre-wrap break-words leading-relaxed">
                     {originalEditText.trim().length > 0
                       ? originalEditText
                       : "(empty message)"}

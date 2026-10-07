@@ -43,7 +43,7 @@ export function MediaUploadDropzone({
         Click to upload or drag and drop
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Images (max 10MB) or Videos (max 1GB)
+        Images (max 10MB) or Videos (max 50MB)
       </p>
     </div>
   );

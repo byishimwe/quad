@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   PiCheckBold,
   PiDownloadSimpleBold,
@@ -32,7 +32,6 @@ function formatTime(seconds: number) {
 }
 
 const GLOBAL_VIDEO_PLAY_EVENT = "quad:video-play";
-let globalVideoPlayerInstance = 0;
 
 export function VideoPlayer({
   src,
@@ -56,9 +55,7 @@ export function VideoPlayer({
   const hideTimerRef = useRef<number | null>(null);
   const settingsRef = useRef<HTMLDivElement | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
-  const playerIdRef = useRef<string>(
-    `vp_${Date.now()}_${(globalVideoPlayerInstance += 1)}`,
-  );
+  const playerId = useId();
   const bufferingTimerRef = useRef<number | null>(null);
   const lastTapRef = useRef<number>(0);
 
@@ -396,19 +393,23 @@ export function VideoPlayer({
     };
 
     const handleWaiting = () => {
+      setIsSlowNetwork(false);
       setIsBuffering(true);
     };
 
     const handlePlaying = () => {
+      setIsSlowNetwork(false);
       setIsBuffering(false);
       setIsInitialLoading(false);
     };
 
     const handleStalled = () => {
+      setIsSlowNetwork(false);
       setIsBuffering(true);
     };
 
     const handleCanPlay = () => {
+      setIsSlowNetwork(false);
       setIsInitialLoading(false);
       setIsBuffering(false);
     };
@@ -440,7 +441,7 @@ export function VideoPlayer({
 
       window.dispatchEvent(
         new CustomEvent(GLOBAL_VIDEO_PLAY_EVENT, {
-          detail: { id: playerIdRef.current },
+          detail: { id: playerId },
         }),
       );
     };
@@ -498,11 +499,10 @@ export function VideoPlayer({
       video.removeEventListener("ended", handleEnded);
       video.removeEventListener("volumechange", handleVolume);
     };
-  }, [clearHideTimer, isSeeking, scheduleHide, volume, isLooping]);
+  }, [clearHideTimer, isSeeking, scheduleHide, volume, isLooping, playerId]);
 
   useEffect(() => {
     clearBufferingTimer();
-    setIsSlowNetwork(false);
 
     if (hasError) return;
 
@@ -524,7 +524,7 @@ export function VideoPlayer({
     const onGlobalPlay = (event: Event) => {
       const ev = event as CustomEvent<{ id?: string }>;
       if (!ev.detail?.id) return;
-      if (ev.detail.id === playerIdRef.current) return;
+      if (ev.detail.id === playerId) return;
       if (!video.paused) {
         video.pause();
       }
@@ -534,7 +534,7 @@ export function VideoPlayer({
     return () => {
       window.removeEventListener(GLOBAL_VIDEO_PLAY_EVENT, onGlobalPlay);
     };
-  }, []);
+  }, [playerId]);
 
   useEffect(() => {
     if (!settingsOpen) return;

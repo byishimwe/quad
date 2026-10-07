@@ -44,6 +44,7 @@ export default function EditPostPage() {
 
   useEffect(() => {
     if (!id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError("Post ID is required");
       setLoading(false);
       return;

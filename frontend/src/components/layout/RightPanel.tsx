@@ -153,18 +153,18 @@ function ActiveChatsMini() {
   const statusLabel = useMemo(() => {
     if (!user) return "Signed out";
     if (loading) return "";
-    if (authors.length > 0) return "Active";
-    return "No activity";
+    if (authors.length > 0) return "Recent activity";
+    return "No recent chat activity";
   }, [authors.length, loading, user]);
 
   return (
-    <section className="rounded-3xl border border-border/40 bg-card/50 overflow-hidden">
+    <section className="rounded-2xl border border-border/40 bg-card/50 overflow-hidden">
       <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-foreground">Active Users</h2>
+        <h2 className="text-sm font-semibold text-foreground">Recent in Chat</h2>
         <span
           className={cn(
             "text-[11px] font-medium",
-            statusLabel === "Active" ? "text-success" : "text-muted-foreground",
+            "text-muted-foreground",
           )}>
           {statusLabel}
         </span>
@@ -173,7 +173,7 @@ function ActiveChatsMini() {
       <div className="px-4 pb-4">
         {!user && (
           <p className="text-xs text-muted-foreground mb-3">
-            Sign in to see active chats
+            Sign in to see recent chat activity
           </p>
         )}
 
@@ -256,7 +256,7 @@ function AccountMiniCard() {
   };
 
   return (
-    <section className="rounded-3xl border border-border/40 bg-card/50 p-4">
+    <section className="rounded-2xl border border-border/40 bg-card/50 p-4">
       <div className="flex items-center gap-3">
         <Link
           to={profileHref}

@@ -23,6 +23,25 @@ import {
 import { cn } from "@/lib/utils";
 import { AuthProcessingState } from "@/components/auth/AuthProcessingState";
 
+function StatusIndicator({
+  status,
+  loading = false,
+}: {
+  status: "success" | "error" | "none";
+  loading?: boolean;
+}) {
+  if (loading) return <div className="p-2"><PiSpinnerBold className="h-4 w-4 animate-spin text-muted-foreground" /></div>;
+  if (status === "none") return null;
+  return (
+    <motion.div
+      initial={{ scale: 0.5, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={cn("flex items-center justify-center", status === "success" ? "text-emerald-500" : "text-destructive")}>
+      {status === "success" ? <PiCheckCircleBold className="h-3.5 w-3.5" /> : <PiXCircleBold className="h-3.5 w-3.5" />}
+    </motion.div>
+  );
+}
+
 export default function SignUpPage() {
   const navigate = useNavigate();
   const { signUp, setActive, isLoaded } = useSignUp();
@@ -52,38 +71,6 @@ export default function SignUpPage() {
   }, [email]);
 
   const isPasswordValid = password.length >= 8;
-
-  const StatusIndicator = ({
-    status,
-    loading = false,
-  }: {
-    status: "success" | "error" | "none";
-    loading?: boolean;
-  }) => {
-    if (loading)
-      return (
-        <div className="p-2">
-          <PiSpinnerBold className="h-4 w-4 animate-spin text-muted-foreground/40" />
-        </div>
-      );
-    if (status === "none") return null;
-
-    return (
-      <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className={cn(
-          "flex items-center justify-center",
-          status === "success" ? "text-emerald-500" : "text-destructive",
-        )}>
-        {status === "success" ? (
-          <PiCheckCircleBold className="h-3.5 w-3.5 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-        ) : (
-          <PiXCircleBold className="h-3.5 w-3.5" />
-        )}
-      </motion.div>
-    );
-  };
 
   // Username availability check
   useEffect(() => {
@@ -272,7 +259,7 @@ export default function SignUpPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.9, ease: "easeOut" }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           className="flex flex-col items-center text-center space-y-3">
           <h2 className="text-4xl font-black tracking-tight text-foreground">
             {step === "form" ? (
@@ -288,7 +275,7 @@ export default function SignUpPage() {
               </span>
             )}
           </h2>
-          <p className="text-[14px] text-muted-foreground/50 font-medium max-w-[280px]">
+          <p className="text-sm text-muted-foreground font-medium max-w-[280px]">
             {step === "form" ? (
               "Join Quad and start moving in real time."
             ) : (
@@ -303,7 +290,7 @@ export default function SignUpPage() {
         {!isLoaded && <SignUpSkeleton />}
 
         {isLoaded && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 [animation-delay:1100ms] fill-mode-both">
+          <div>
             {error && (
               <Alert
                 variant="destructive"
@@ -349,7 +336,7 @@ export default function SignUpPage() {
                         <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-border/40 to-transparent" />
                       </div>
                       <div className="relative bg-background px-6">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 italic">
+                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
                           OR
                         </span>
                       </div>
@@ -426,7 +413,7 @@ export default function SignUpPage() {
                               />
                               <button
                                 type="button"
-                                className="p-1.5 text-muted-foreground/30 hover:text-primary transition-colors focus:outline-none"
+                                className="min-h-11 min-w-11 inline-flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                                 onClick={() => setShowPassword((v) => !v)}
                                 aria-label={
                                   showPassword
@@ -452,19 +439,6 @@ export default function SignUpPage() {
                           loading={submitting}
                           disabled={submitting}>
                           Sign Up
-                          {/* Shimmer Effect */}
-                          <motion.div
-                            animate={{
-                              left: ["-100%", "200%"],
-                            }}
-                            transition={{
-                              duration: 3,
-                              repeat: Infinity,
-                              repeatDelay: 5,
-                              ease: "easeInOut",
-                            }}
-                            className="absolute inset-x-0 h-full w-[100px] skew-x-[25deg] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-                          />
                         </Button>
                       </div>
                     </form>
@@ -506,18 +480,6 @@ export default function SignUpPage() {
                         loading={submitting}
                         disabled={submitting || code.length < 6}>
                         Verify & Continue
-                        <motion.div
-                          animate={{
-                            left: ["-100%", "200%"],
-                          }}
-                          transition={{
-                            duration: 3,
-                            repeat: Infinity,
-                            repeatDelay: 5,
-                            ease: "easeInOut",
-                          }}
-                          className="absolute inset-x-0 h-full w-[100px] skew-x-[25deg] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-                        />
                       </Button>
                     </div>
                   </form>
@@ -525,14 +487,14 @@ export default function SignUpPage() {
                   <div className="flex items-center justify-between px-2">
                     <button
                       type="button"
-                      className="text-[10px] font-black uppercase tracking-[0.1em] text-muted-foreground/40 hover:text-foreground transition-colors"
+                      className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setStep("form")}
                       disabled={submitting}>
                       Back
                     </button>
                     <button
                       type="button"
-                      className="text-[10px] font-black uppercase tracking-[0.1em] text-primary hover:text-primary/80 transition-colors"
+                      className="text-xs font-bold uppercase tracking-[0.1em] text-primary hover:text-primary/80 transition-colors"
                       onClick={async () => {
                         if (!signUp) return;
                         setSubmitting(true);

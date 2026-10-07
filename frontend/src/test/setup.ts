@@ -76,8 +76,14 @@ const localStorageMock = {
   },
 };
 
-global.localStorage = localStorageMock as any;
-global.sessionStorage = localStorageMock as any;
+Object.defineProperty(globalThis, "localStorage", {
+  configurable: true,
+  value: localStorageMock,
+});
+Object.defineProperty(globalThis, "sessionStorage", {
+  configurable: true,
+  value: localStorageMock,
+});
 
 // Set up a mock auth token for all tests
 beforeEach(async () => {
