@@ -10,6 +10,7 @@ import {
 import { findUserByUsername } from "../utils/userLookup.util.js";
 import { sanitizePostText } from "../utils/content.util.js";
 import { AppError } from "../utils/appError.util.js";
+import { deleteOwnedAssets } from "../utils/upload.util.js";
 
 export interface CreatePostInput {
   text?: string;
@@ -144,7 +145,7 @@ export class PostService {
     };
 
     const updatedPost = await Post.findByIdAndUpdate(id, sanitizedUpdates, {
-      new: true,
+      returnDocument: "after",
     });
 
     if (!updatedPost) {
@@ -176,6 +177,7 @@ export class PostService {
     }
 
     await Post.findByIdAndDelete(id);
+    await deleteOwnedAssets(userId, post.media.map((item) => item.url));
 
     const io = getSocketIO();
     io.emit("deletePost", id);

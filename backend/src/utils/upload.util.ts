@@ -2,6 +2,8 @@ import cloudinary, { UPLOAD_PRESETS } from "../config/cloudinary.config.js";
 import { env } from "../config/env.config.js";
 import { logger } from "./logger.util.js";
 import { Readable } from "stream";
+import { createReadStream } from "fs";
+import { UploadedAsset } from "../models/UploadedAsset.model.js";
 import type {
   UploadApiErrorResponse,
   UploadApiResponse,
@@ -27,7 +29,7 @@ type UploadPresetType = keyof typeof UPLOAD_PRESETS;
  * Upload file buffer to Cloudinary
  */
 export const uploadToCloudinary = async (
-  fileBuffer: Buffer,
+  source: Buffer | string,
   preset: UploadPresetType = "POST_IMAGE",
 ): Promise<UploadResult> => {
   return new Promise((resolve, reject) => {
@@ -96,8 +98,10 @@ export const uploadToCloudinary = async (
         );
 
     // Convert buffer to stream and pipe to Cloudinary
-    const bufferStream = Readable.from(fileBuffer);
-    bufferStream.pipe(uploadStream);
+    const input = typeof source === "string" ? createReadStream(source) : Readable.from(source);
+    input.on("error", reject);
+    uploadStream.on("error", reject);
+    input.pipe(uploadStream);
   });
 };
 
@@ -144,13 +148,13 @@ export const deleteFromCloudinary = async (
 
     return {
       success: false,
-      message: `Deletion failed: ${result.result}`,
+      message: "Deletion failed",
     };
   } catch (error: unknown) {
     logger.error("Cloudinary delete error", error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Failed to delete file",
+      message: "Failed to delete file",
     };
   }
 };
@@ -187,16 +191,42 @@ export const deleteMultipleFromCloudinary = async (
   };
 };
 
+/** Delete assets recorded as uploaded by this user; retain failed records for retry. */
+export async function deleteOwnedAssets(ownerClerkId: string, urls?: string[]): Promise<number> {
+  const assets = await UploadedAsset.find({
+    ownerClerkId,
+    ...(urls ? { url: { $in: urls } } : {}),
+  }).lean();
+  let failures = 0;
+  for (const asset of assets) {
+    const result = await deleteFromCloudinary(asset.publicId, asset.resourceType);
+    if (result.success) await UploadedAsset.deleteOne({ _id: asset._id });
+    else {
+      failures++;
+      logger.warn("Owned media cleanup failed", { publicId: asset.publicId, ownerClerkId });
+    }
+  }
+  return failures;
+}
+
 /**
  * Extract publicId from Cloudinary URL
  */
 export const extractPublicIdFromUrl = (url: string): string | null => {
   try {
-    // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/{transformations}/{version}/{public_id}.{format}
-    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^.]+$/);
-    return matches?.[1] ?? null;
-  } catch (error) {
-    logger.error("Error extracting publicId", error);
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" || parsed.hostname !== "res.cloudinary.com" || parsed.search || parsed.hash) return null;
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    if (parts[0] !== env.CLOUDINARY_CLOUD_NAME || !["image", "video"].includes(parts[1] ?? "") || parts[2] !== "upload") return null;
+    const rest = parts.slice(3);
+    if (/^v\d+$/.test(rest[0] || "")) rest.shift();
+    if (rest[0] !== "quad" || !["posts", "stories", "polls", "profiles", "covers"].includes(rest[1] ?? "") || rest.length < 3) return null;
+    if (rest.some((part) => part === "." || part === "..")) return null;
+    const filename = rest.pop()!;
+    if (!/\.[a-zA-Z0-9]+$/.test(filename)) return null;
+    rest.push(filename.replace(/\.[a-zA-Z0-9]+$/, ""));
+    return rest.join("/");
+  } catch {
     return null;
   }
 };
@@ -208,7 +238,7 @@ export const validateFileType = (
   mimetype: string,
   allowedTypes: string[],
 ): boolean => {
-  return allowedTypes.some((type) => mimetype.includes(type));
+  return allowedTypes.includes(mimetype.toLowerCase().trim());
 };
 
 /**
@@ -245,7 +275,7 @@ export const getValidationRules = (preset: UploadPresetType) => {
       allowedTypes: imageTypes,
     },
     POST_VIDEO: {
-      maxSize: 1024, // 1GB
+      maxSize: env.UPLOAD_MAX_FILE_SIZE_BYTES / 1024 / 1024,
       allowedTypes: videoTypes,
     },
     STORY_IMAGE: {
@@ -253,7 +283,7 @@ export const getValidationRules = (preset: UploadPresetType) => {
       allowedTypes: imageTypes,
     },
     STORY_VIDEO: {
-      maxSize: 1024, // 1GB
+      maxSize: env.UPLOAD_MAX_FILE_SIZE_BYTES / 1024 / 1024,
       allowedTypes: videoTypes,
     },
     POLL_IMAGE: {

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { validateSchema } from "../utils/validation.util.js";
 import { requireApiAuth } from "../middlewares/auth.middleware.js";
-import { writeRateLimiter } from "../middlewares/rateLimiter.middleware.js";
 import {
   createPollSchema,
   updatePollSchema,
@@ -119,7 +118,6 @@ router.delete(
 router.post(
   "/:id/vote",
   requireApiAuth,
-  writeRateLimiter,
   validateSchema(pollIdSchema, "params"),
   validateSchema(voteOnPollSchema, "body"),
   voteOnPoll,

@@ -31,6 +31,8 @@ import { requestLogger } from "./middlewares/requestLogger.middleware.js";
 
 // --- Initialize Express ---
 const app = express();
+// Set this to the number of trusted reverse proxies only when direct access is blocked.
+app.set("trust proxy", env.TRUST_PROXY_HOPS);
 
 // Security Headers with CSP and HSTS
 app.use(
@@ -38,8 +40,8 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"], // Required for Swagger UI
-        styleSrc: ["'self'", "'unsafe-inline'"], // Required for Swagger UI
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
         imgSrc: ["'self'", "data:", "https:", "blob:"], // Allow Cloudinary images
         connectSrc: ["'self'", env.FRONTEND_URL || "http://localhost:5173"],
         fontSrc: ["'self'", "data:"],
@@ -70,11 +72,19 @@ app.use(cors(corsOptions));
 app.use(requestLogger);
 
 // API Documentation (Must be before health and other catch-alls)
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, swaggerUiOptions),
-);
+if (env.NODE_ENV !== "production" || env.ENABLE_API_DOCS === "true") {
+  app.use(
+    "/api-docs",
+    helmet.contentSecurityPolicy({
+      directives: {
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    }),
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, swaggerUiOptions),
+  );
+}
 
 // Health check routes (no auth required, before body parsing)
 app.use("/health", healthRoutes);

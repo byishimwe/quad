@@ -7,6 +7,7 @@ import { env } from "../config/env.config.js";
 import { User } from "../models/User.model.js";
 import { propagateUserSnapshotUpdates } from "../utils/userSnapshotPropagation.util.js";
 import { logger } from "../utils/logger.util.js";
+import { deleteOwnedAssets } from "../utils/upload.util.js";
 
 // Strict rate limiter for webhooks to prevent DoS against signature verification
 const webhookRateLimiter = rateLimit({
@@ -30,6 +31,7 @@ router.post(
   webhookRateLimiter,
   express.raw({ type: "application/json" }),
   async (req: Request, res: Response) => {
+    let signatureVerified = false;
     logger.info("Clerk webhook endpoint hit", {
       path: req.path,
       bodyLength: (req.body as Buffer | undefined)?.length ?? 0,
@@ -46,6 +48,7 @@ router.post(
 
       const wh = new Webhook(webhookSecret);
       const evt = wh.verify(payload, headers) as WebhookEvent;
+      signatureVerified = true;
       const eventType = evt.type;
 
       logger.info("Clerk webhook received", { eventType });
@@ -58,21 +61,35 @@ router.post(
           const lastName = (evt.data as { last_name?: string }).last_name;
           const displayName =
             [firstName, lastName].filter(Boolean).join(" ").trim() || username;
-          const profileImage =
-            evt.data.image_url ||
-            `https://avatar.iran.liara.run/public/${
-              Math.floor(Math.random() * 100) + 1
-            }`;
-
-          await User.create({
+          const insert = (name: string) => ({
             clerkId: evt.data.id,
-            username,
+            username: name,
             ...(email ? { email } : {}),
             displayName,
             ...(firstName ? { firstName } : {}),
             ...(lastName ? { lastName } : {}),
-            profileImage,
+            ...(evt.data.image_url ? { profileImage: evt.data.image_url } : {}),
           });
+
+          try {
+            await User.findOneAndUpdate(
+              { clerkId: evt.data.id },
+              { $setOnInsert: insert(username) },
+              { upsert: true, returnDocument: "after" },
+            );
+          } catch (error) {
+            const duplicateUsername =
+              typeof error === "object" && error !== null &&
+              "code" in error && error.code === 11000 &&
+              "keyPattern" in error &&
+              !!(error.keyPattern as Record<string, unknown>)?.username;
+            if (!duplicateUsername) throw error;
+            await User.findOneAndUpdate(
+              { clerkId: evt.data.id },
+              { $setOnInsert: insert(`${username}_${evt.data.id}`) },
+              { upsert: true, returnDocument: "after" },
+            );
+          }
 
           logger.info("User created via Clerk webhook", {
             clerkId: evt.data.id,
@@ -111,7 +128,7 @@ router.post(
             const updatedUser = await User.findOneAndUpdate(
               { clerkId: evt.data.id },
               updateOps,
-              { new: true, upsert: true, session },
+              { returnDocument: "after", upsert: true, session },
             );
 
             if (updatedUser) {
@@ -142,10 +159,11 @@ router.post(
             const msg =
               propagationError instanceof Error ? propagationError.message : "";
             const isTxnUnsupported =
-              msg.includes("Transaction") &&
-              (msg.includes("replica set") ||
-                msg.includes("mongos") ||
-                msg.includes("not supported"));
+              msg.includes("does not support retryable writes") ||
+              (msg.includes("Transaction") &&
+                (msg.includes("replica set") ||
+                  msg.includes("mongos") ||
+                  msg.includes("not supported")));
 
             if (!isTxnUnsupported) {
               logger.error(
@@ -163,7 +181,7 @@ router.post(
             const updatedUser = await User.findOneAndUpdate(
               { clerkId: evt.data.id },
               updateOps,
-              { new: true, upsert: true },
+              { returnDocument: "after", upsert: true },
             );
 
             if (updatedUser) {
@@ -197,6 +215,10 @@ router.post(
               eventType,
             });
             break;
+          }
+
+          if (await deleteOwnedAssets(userId)) {
+            throw new Error("Cloudinary account cleanup incomplete");
           }
 
           // Cascade delete all user data
@@ -244,15 +266,13 @@ router.post(
 
       return res.status(200).json({ success: true });
     } catch (err: unknown) {
-      logger.error("Clerk webhook verification failed", {
+      logger.error("Clerk webhook request failed", {
         message: err instanceof Error ? err.message : undefined,
         name: err instanceof Error ? err.name : undefined,
       });
-      const message =
-        err instanceof Error ? err.message : "Invalid webhook signature";
-      return res
-        .status(400)
-        .json({ error: "Invalid webhook signature", details: message });
+      return signatureVerified
+        ? res.status(500).json({ error: "Webhook processing failed" })
+        : res.status(400).json({ error: "Invalid webhook signature" });
     }
   },
 );

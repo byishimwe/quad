@@ -2,6 +2,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { createTestApp } from "../utils/testApp.js";
+import { User } from "../../models/User.model.js";
 
 const sendWebhook = async (payload: unknown, headers?: Record<string, string>) => {
   const app = createTestApp();
@@ -134,5 +135,25 @@ describe("Webhook API", () => {
 
     expect(res.status).toBe(400);
     expect(res.body?.error).toBe("Invalid webhook signature");
+    expect(res.body?.details).toBeUndefined();
+  });
+
+  it("accepts repeated user.created delivery without duplicating the user", async () => {
+    const payload = {
+      type: "user.created",
+      data: { id: "wh_repeat", username: "repeat", email_addresses: [{ email_address: "repeat@example.com" }] },
+    };
+    expect((await sendWebhook(payload)).status).toBe(200);
+    expect((await sendWebhook(payload)).status).toBe(200);
+    expect(await User.countDocuments({ clerkId: "wh_repeat" })).toBe(1);
+  });
+
+  it("gives a second user a unique username when Clerk names collide", async () => {
+    const first = { type: "user.created", data: { id: "wh_first", username: "shared", email_addresses: [{ email_address: "first@example.com" }] } };
+    const second = { type: "user.created", data: { id: "wh_second", username: "shared", email_addresses: [{ email_address: "second@example.com" }] } };
+    expect((await sendWebhook(first)).status).toBe(200);
+    expect((await sendWebhook(second)).status).toBe(200);
+    const users = await User.find({ clerkId: { $in: ["wh_first", "wh_second"] } }).lean();
+    expect(new Set(users.map((user) => user.username)).size).toBe(2);
   });
 });

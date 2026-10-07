@@ -14,13 +14,7 @@ const UserSchema = new Schema<IUserDocument>(
     displayName: { type: String },
     firstName: { type: String },
     lastName: { type: String },
-    profileImage: {
-      type: String,
-      default: () => {
-        const randomNumber = Math.floor(Math.random() * 100) + 1; // 1-100
-        return `https://avatar.iran.liara.run/public/${randomNumber}`;
-      },
-    },
+    profileImage: { type: String },
     coverImage: { type: String },
     bio: { type: String },
     isVerified: { type: Boolean, default: false },

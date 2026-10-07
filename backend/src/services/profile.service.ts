@@ -143,7 +143,7 @@ export class ProfileService {
         { clerkId: currentUserId },
         updateOps,
         {
-          new: true,
+          returnDocument: "after",
           runValidators: true,
           session,
         },
@@ -197,10 +197,11 @@ export class ProfileService {
       const msg =
         propagationError instanceof Error ? propagationError.message : "";
       const isTxnUnsupported =
-        msg.includes("Transaction") &&
-        (msg.includes("replica set") ||
-          msg.includes("mongos") ||
-          msg.includes("not supported"));
+        msg.includes("does not support retryable writes") ||
+        (msg.includes("Transaction") &&
+          (msg.includes("replica set") ||
+            msg.includes("mongos") ||
+            msg.includes("not supported")));
 
       if (!isTxnUnsupported) {
         if (propagationError instanceof AppError) {
@@ -223,7 +224,7 @@ export class ProfileService {
         { clerkId: currentUserId },
         updateOps,
         {
-          new: true,
+          returnDocument: "after",
           runValidators: true,
         },
       );

@@ -1,11 +1,32 @@
 import type { Request, Response } from "express";
 import { fileTypeFromBuffer } from "file-type";
-import { readFile, unlink } from "fs/promises";
-import { uploadToCloudinary, deleteFromCloudinary, extractPublicIdFromUrl, validateFileType, validateFileSize, getValidationRules } from "../utils/upload.util.js";
+import { open, readFile, unlink } from "fs/promises";
+import { uploadToCloudinary, deleteFromCloudinary, deleteOwnedAssets, extractPublicIdFromUrl, validateFileType, validateFileSize, getValidationRules } from "../utils/upload.util.js";
 import { User } from "../models/User.model.js";
+import { UploadedAsset } from "../models/UploadedAsset.model.js";
 import { clerkClient } from "@clerk/express";
 import type { AspectRatio } from "../config/cloudinary.config.js";
 import { logger } from "../utils/logger.util.js";
+import type { UploadResult } from "../utils/upload.util.js";
+
+async function recordOwnedUpload(req: Request, result: UploadResult): Promise<void> {
+  const ownerClerkId = req.auth?.userId;
+  if (!ownerClerkId) {
+    await deleteFromCloudinary(result.publicId, result.resourceType);
+    throw new Error("Upload has no authenticated owner");
+  }
+  try {
+    await UploadedAsset.create({
+      ownerClerkId,
+      url: result.url,
+      publicId: result.publicId,
+      resourceType: result.resourceType,
+    });
+  } catch (error) {
+    await deleteFromCloudinary(result.publicId, result.resourceType);
+    throw error;
+  }
+}
 
 interface FileValidationResult {
   valid: boolean;
@@ -38,13 +59,23 @@ async function validateFileContent(
 }
 
 /**
- * Get file buffer from either memory storage (buffer) or disk storage (path)
+ * Read only the signature bytes for a disk-backed video. Images are capped at 10 MiB.
  */
 async function getFileBuffer(file: Express.Multer.File): Promise<Buffer> {
   if (file.buffer) {
     return file.buffer;
   }
   if (file.path) {
+    if (file.mimetype.startsWith("video/")) {
+      const handle = await open(file.path, "r");
+      try {
+        const header = Buffer.alloc(4100);
+        const { bytesRead } = await handle.read(header, 0, header.length, 0);
+        return header.subarray(0, bytesRead);
+      } finally {
+        await handle.close();
+      }
+    }
     return await readFile(file.path);
   }
   throw new Error("File has no buffer or path");
@@ -124,10 +155,8 @@ export const uploadPostMedia = async (req: Request, res: Response) => {
     }
 
     // Upload to Cloudinary
-    const result = await uploadToCloudinary(buffer, preset);
-
-    // Clean up temp file after successful upload
-    await cleanupTempFile(req.file);
+    const result = await uploadToCloudinary(isVideo && req.file.path ? req.file.path : buffer, preset);
+    await recordOwnedUpload(req, result);
 
     return res.status(200).json({
       success: true,
@@ -139,16 +168,12 @@ export const uploadPostMedia = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     logger.error("Post media upload error", error);
-    // Clean up temp file on error
-    if (req.file) {
-      await cleanupTempFile(req.file);
-    }
-    const message = error instanceof Error ? error.message : "Unknown error";
     return res.status(500).json({
       success: false,
       message: "Failed to upload media",
-      error: message,
     });
+  } finally {
+    if (req.file) await cleanupTempFile(req.file);
   }
 };
 
@@ -210,10 +235,8 @@ export const uploadStoryMedia = async (req: Request, res: Response) => {
     }
 
     // Upload to Cloudinary
-    const result = await uploadToCloudinary(buffer, preset);
-
-    // Clean up temp file after successful upload
-    await cleanupTempFile(req.file);
+    const result = await uploadToCloudinary(isVideo && req.file.path ? req.file.path : buffer, preset);
+    await recordOwnedUpload(req, result);
 
     return res.status(200).json({
       success: true,
@@ -225,16 +248,12 @@ export const uploadStoryMedia = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     logger.error("Story upload error", error);
-    // Clean up temp file on error as well
-    if (req.file) {
-      await cleanupTempFile(req.file);
-    }
-    const message = error instanceof Error ? error.message : "Unknown error";
     return res.status(500).json({
       success: false,
       message: "Failed to upload story",
-      error: message,
     });
+  } finally {
+    if (req.file) await cleanupTempFile(req.file);
   }
 };
 
@@ -302,9 +321,8 @@ export const uploadPollMedia = async (req: Request, res: Response) => {
 
     // Upload to Cloudinary
     const result = await uploadToCloudinary(buffer, preset);
+    await recordOwnedUpload(req, result);
 
-    // Clean up temp file after successful upload
-    await cleanupTempFile(req.file);
 
     return res.status(200).json({
       success: true,
@@ -316,16 +334,12 @@ export const uploadPollMedia = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     logger.error("Poll upload error", error);
-    // Clean up temp file on error
-    if (req.file) {
-      await cleanupTempFile(req.file);
-    }
-    const message = error instanceof Error ? error.message : "Unknown error";
     return res.status(500).json({
       success: false,
       message: "Failed to upload poll media",
-      error: message,
     });
+  } finally {
+    if (req.file) await cleanupTempFile(req.file);
   }
 };
 
@@ -375,28 +389,30 @@ export const uploadProfileImage = async (req: Request, res: Response) => {
 
     // Upload to Cloudinary
     const result = await uploadToCloudinary(buffer, "PROFILE");
+    await recordOwnedUpload(req, result);
 
     // Persist new profile image URL to MongoDB for the current user
     const clerkId = req.auth?.userId;
     if (clerkId) {
       try {
-        await User.findOneAndUpdate(
+        const previous = await User.findOneAndUpdate(
           { clerkId },
           { $set: { profileImage: result.url } },
-          { new: true },
+          { returnDocument: "before" },
         );
 
         // Optionally sync to Clerk as well so avatars stay consistent
         await clerkClient.users.updateUser(clerkId, {
           imageUrl: result.url,
         } as unknown as Parameters<typeof clerkClient.users.updateUser>[1]);
+        if (previous?.profileImage && previous.profileImage !== result.url) {
+          await deleteOwnedAssets(clerkId, [previous.profileImage]);
+        }
       } catch (persistError) {
         logger.error("Failed to persist profile image URL", persistError);
       }
     }
 
-    // Clean up temp file after successful upload
-    await cleanupTempFile(req.file);
 
     return res.status(200).json({
       success: true,
@@ -408,16 +424,12 @@ export const uploadProfileImage = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     logger.error("Profile image upload error", error);
-    // Clean up temp file on error
-    if (req.file) {
-      await cleanupTempFile(req.file);
-    }
-    const message = error instanceof Error ? error.message : "Unknown error";
     return res.status(500).json({
       success: false,
       message: "Failed to upload profile image",
-      error: message,
     });
+  } finally {
+    if (req.file) await cleanupTempFile(req.file);
   }
 };
 
@@ -467,23 +479,25 @@ export const uploadCoverImage = async (req: Request, res: Response) => {
 
     // Upload to Cloudinary
     const result = await uploadToCloudinary(buffer, "COVER");
+    await recordOwnedUpload(req, result);
 
     // Persist new cover image URL to MongoDB for the current user
     const clerkId = req.auth?.userId;
     if (clerkId) {
       try {
-        await User.findOneAndUpdate(
+        const previous = await User.findOneAndUpdate(
           { clerkId },
           { $set: { coverImage: result.url } },
-          { new: true },
+          { returnDocument: "before" },
         );
+        if (previous?.coverImage && previous.coverImage !== result.url) {
+          await deleteOwnedAssets(clerkId, [previous.coverImage]);
+        }
       } catch (persistError) {
         logger.error("Failed to persist cover image URL", persistError);
       }
     }
 
-    // Clean up temp file after successful upload
-    await cleanupTempFile(req.file);
 
     return res.status(200).json({
       success: true,
@@ -495,16 +509,12 @@ export const uploadCoverImage = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     logger.error("Cover image upload error", error);
-    // Clean up temp file on error
-    if (req.file) {
-      await cleanupTempFile(req.file);
-    }
-    const message = error instanceof Error ? error.message : "Unknown error";
     return res.status(500).json({
       success: false,
       message: "Failed to upload cover image",
-      error: message,
     });
+  } finally {
+    if (req.file) await cleanupTempFile(req.file);
   }
 };
 
@@ -556,6 +566,7 @@ export const deleteFile = async (req: Request, res: Response) => {
     const result = await deleteFromCloudinary(publicId, resourceType);
 
     if (result.success) {
+      await UploadedAsset.deleteOne({ ownerClerkId: userId, url, publicId });
       return res.status(200).json({
         success: true,
         message: result.message,
@@ -564,15 +575,13 @@ export const deleteFile = async (req: Request, res: Response) => {
 
     return res.status(400).json({
       success: false,
-      message: result.message,
+      message: "Unable to delete media right now",
     });
   } catch (error: unknown) {
     logger.error("File deletion error", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
     return res.status(500).json({
       success: false,
       message: "Failed to delete file",
-      error: message,
     });
   }
 };
@@ -589,6 +598,9 @@ async function verifyFileOwnership(
   const { Story } = await import("../models/Story.model.js");
   const { Poll } = await import("../models/Poll.model.js");
   const { User } = await import("../models/User.model.js");
+
+  const upload = await UploadedAsset.exists({ ownerClerkId: userId, url });
+  if (upload) return true;
 
   // Check user profile/cover images
   const user = await User.findOne({

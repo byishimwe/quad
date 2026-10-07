@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   generalRateLimiter,
   uploadRateLimiter,
-  writeRateLimiter,
+  limitWrites,
 } from "../middlewares/rateLimiter.middleware.js";
 import userRoutes from "./user.routes.js";
 import postRoutes from "./post.routes.js";
@@ -22,19 +22,23 @@ const router = Router();
 
 // Apply general rate limiting to all API routes
 router.use(generalRateLimiter);
+router.use((req, res, next) => req.path.startsWith("/upload") ? next() : limitWrites(req, res, next));
 
 router.use("/users", userRoutes);
-router.use("/posts", writeRateLimiter, postRoutes);
-router.use("/stories", writeRateLimiter, storyRoutes);
-router.use("/polls", writeRateLimiter, pollRoutes);
-router.use("/chat", writeRateLimiter, chatRoutes);
+router.use("/posts", postRoutes);
+router.use("/stories", storyRoutes);
+router.use("/polls", pollRoutes);
+router.use("/chat", chatRoutes);
 router.use("/profile", profileRoutes);
-router.use("/follow", writeRateLimiter, followRoutes);
+router.use("/follow", followRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/feed", feedRoutes);
-router.use("/reactions", writeRateLimiter, reactionRoutes);
-router.use("/comments", writeRateLimiter, commentRoutes);
-router.use("/bookmarks", writeRateLimiter, bookmarkRoutes);
-router.use("/upload", uploadRateLimiter, uploadRoutes);
+router.use("/reactions", reactionRoutes);
+router.use("/comments", commentRoutes);
+router.use("/bookmarks", bookmarkRoutes);
+router.use("/upload", (req, res, next) => {
+  if (req.method === "POST") return uploadRateLimiter(req, res, next);
+  next();
+}, uploadRoutes);
 
 export default router;

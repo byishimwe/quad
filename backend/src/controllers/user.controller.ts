@@ -132,7 +132,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     session.startTransaction();
 
     updatedUser = await User.findOneAndUpdate({ clerkId }, updateOps, {
-      new: true,
+      returnDocument: "after",
       session,
     });
 
@@ -178,10 +178,11 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     const msg =
       propagationError instanceof Error ? propagationError.message : "";
     const isTxnUnsupported =
-      msg.includes("Transaction") &&
-      (msg.includes("replica set") ||
-        msg.includes("mongos") ||
-        msg.includes("not supported"));
+      msg.includes("does not support retryable writes") ||
+      (msg.includes("Transaction") &&
+        (msg.includes("replica set") ||
+          msg.includes("mongos") ||
+          msg.includes("not supported")));
 
     if (!isTxnUnsupported) {
       logger.error(
@@ -198,7 +199,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
 
     // Non-transactional path (still awaited; request fails if propagation fails)
     updatedUser = await User.findOneAndUpdate({ clerkId }, updateOps, {
-      new: true,
+      returnDocument: "after",
     });
     if (!updatedUser) {
       throw new AppError("User not found", 404);
