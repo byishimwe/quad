@@ -8,6 +8,11 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      MONGOMS_VERSION: 7.0.24
+      VITE_API_BASE_URL: http://127.0.0.1:4000/api
+      VITE_SOCKET_URL: http://127.0.0.1:4000
+      VITE_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,5 +24,3 @@ jobs:
             backend/package-lock.json
       - run: npm run setup
       - run: npm run check
-        env:
-          MONGOMS_VERSION: 7.0.24
