@@ -46,6 +46,7 @@ export default function EditStoryPage() {
 
   useEffect(() => {
     if (!id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError("Story ID is required");
       setLoading(false);
       return;
@@ -91,6 +92,7 @@ export default function EditStoryPage() {
     if (!editor) return;
 
     const update = () => {
+      if (editor.isDestroyed) return;
       setEditorHtml(editor.getHTML());
     };
 
@@ -98,12 +100,6 @@ export default function EditStoryPage() {
     editor.on("update", update);
     return () => {
       editor.off("update", update);
-    };
-  }, [editor]);
-
-  useEffect(() => {
-    return () => {
-      editor?.destroy();
     };
   }, [editor]);
 
