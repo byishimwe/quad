@@ -104,7 +104,7 @@ export function CommentComposer({
               if (!text) setIsFocused(false);
             }}
             placeholder={placeholder || "Write a comment..."}
-            className="min-h-[48px] w-full resize-none border-0 bg-transparent px-4 py-3 text-[14px] leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="seamless-field min-h-[48px] w-full resize-none bg-transparent px-4 py-3 text-[14px] leading-relaxed text-foreground placeholder:text-muted-foreground"
             maxLength={MAX_LENGTH}
             autoFocus={autoFocus}
             minHeight={48}

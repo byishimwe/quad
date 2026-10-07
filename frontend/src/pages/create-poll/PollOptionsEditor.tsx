@@ -61,7 +61,7 @@ export function PollOptionsEditor({
               }}
               placeholder={`Option ${index + 1}`}
               maxLength={200}
-              className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 p-0"
+              className="seamless-field flex-1 bg-transparent text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 p-0"
             />
 
             <button

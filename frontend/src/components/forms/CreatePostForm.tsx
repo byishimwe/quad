@@ -155,7 +155,7 @@ export function CreatePostForm({
                         rows={1}
                         disabled={isLoading}
                         className={cn(
-                          "w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus-visible:ring-0",
+                          "seamless-field w-full bg-transparent",
                           "text-foreground placeholder:text-muted-foreground text-lg resize-none min-h-[48px] py-2",
                         )}
                       />

@@ -144,12 +144,13 @@ export function FeedPostComposer({
     <div
       ref={containerRef}
       className={cn(
-        "bg-card border border-border/40 rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-4 shadow-card transition-all hover:border-border/60",
+        "bg-card border border-border/40 rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-4 shadow-card transition-all hover:border-border/60 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20",
         disabled && "opacity-60",
       )}
       onClick={() => {
         if (!disabled) setIsExpanded(true);
-      }}>
+      }}
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -186,7 +187,7 @@ export function FeedPostComposer({
               target.style.height = "auto";
               target.style.height = `${target.scrollHeight}px`;
             }}
-            className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground text-lg resize-none min-h-[48px] py-2"
+            className="seamless-field w-full bg-transparent text-foreground placeholder:text-muted-foreground text-lg resize-none min-h-[48px] py-2"
           />
 
           {/* Character count */}
@@ -202,7 +203,8 @@ export function FeedPostComposer({
                       : charCount > 800
                         ? "text-amber-500"
                         : "text-muted-foreground",
-                )}>
+                )}
+              >
                 {charCount > 0 && `${charCount}/1000`}
               </span>
             </div>
@@ -236,7 +238,8 @@ export function FeedPostComposer({
                 }}
                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all"
                 aria-label="Add image"
-                title="Add image">
+                title="Add image"
+              >
                 <PiImageBold className="w-5 h-5" />
               </button>
               <button
@@ -246,7 +249,8 @@ export function FeedPostComposer({
                 }}
                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all"
                 aria-label="Add video"
-                title="Add video">
+                title="Add video"
+              >
                 <PiVideoCameraBold className="w-5 h-5" />
               </button>
             </div>
@@ -261,7 +265,8 @@ export function FeedPostComposer({
                   onClick={(e) => {
                     e.stopPropagation();
                     resetComposer();
-                  }}>
+                  }}
+                >
                   Cancel
                 </Button>
               )}
@@ -278,7 +283,8 @@ export function FeedPostComposer({
                 onClick={(e) => {
                   e.stopPropagation();
                   void submit();
-                }}>
+                }}
+              >
                 {isSubmitting ? (
                   <span className="inline-flex items-center gap-2">
                     <PiSpinnerBold className="h-4 w-4 animate-spin" />
