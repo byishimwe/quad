@@ -29,15 +29,6 @@ export function useNotificationsController({
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterTab>("all");
 
-  // Reset when filter changes
-  useEffect(() => {
-    setInitialLoading(true);
-    setError(null);
-    setPage(1);
-    setNotifications([]);
-    setHasMore(true);
-  }, [filter]);
-
   // Load notifications
   useEffect(() => {
     let cancelled = false;
@@ -137,6 +128,11 @@ export function useNotificationsController({
   }, [hasMore, loading]);
 
   const handleFilterChange = useCallback((tab: FilterTab) => {
+    setInitialLoading(true);
+    setError(null);
+    setPage(1);
+    setNotifications([]);
+    setHasMore(true);
     setFilter(tab);
   }, []);
 

@@ -1,15 +1,12 @@
 import { io, Socket } from "socket.io-client";
 import type { ApiNotification } from "@/types/api";
+import { env } from "@/lib/envValidation";
 
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL ||
-  (import.meta.env.VITE_API_BASE_URL
-    ? import.meta.env.VITE_API_BASE_URL.replace(/\/_?api\/?$/, "")
-    : "http://localhost:4000");
+const SOCKET_URL = env.socketUrl;
 
 let socket: Socket | null = null;
 
-export function connectSocket(token: string): Socket {
+export function connectSocket(getToken: () => Promise<string | null>): Socket {
   if (socket?.connected) {
     return socket;
   }
@@ -22,7 +19,12 @@ export function connectSocket(token: string): Socket {
   socket = io(SOCKET_URL, {
     transports: ["websocket", "polling"],
     withCredentials: true,
-    auth: { token }, // Send Clerk token for authentication
+    // Socket.IO invokes this before each connection, including reconnections.
+    auth: (callback) => {
+      void getToken()
+        .then((token) => callback({ token }))
+        .catch(() => callback({ token: null }));
+    },
     autoConnect: true,
     reconnection: true,
     reconnectionAttempts: 20, // More attempts for better reliability
@@ -46,12 +48,6 @@ export function connectSocket(token: string): Socket {
   socket.on("disconnect", (reason) => {
     if (import.meta.env.DEV) {
       console.log("Socket disconnected:", reason);
-    }
-  });
-
-  socket.on("reconnect", (attemptNumber) => {
-    if (import.meta.env.DEV) {
-      console.log("Socket reconnected after", attemptNumber, "attempts");
     }
   });
 

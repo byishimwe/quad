@@ -3,6 +3,16 @@ import * as fc from "fast-check";
 import { getSocket } from "@/lib/socket";
 import type { NotificationPayload } from "@/lib/socket";
 
+vi.mock("@/lib/socket", async () => {
+  const { EventEmitter } = await import("events");
+  const mockSocket = new EventEmitter();
+  return {
+    getSocket: vi.fn(() => mockSocket),
+    connectSocket: vi.fn(),
+    disconnectSocket: vi.fn(),
+  };
+});
+
 // Feature: quad-production-ready, Property 38: Real-time Notification Toast
 // For any notification:new event received, a toast notification should appear with the notification message.
 // Validates: Requirements 11.3
@@ -10,16 +20,6 @@ import type { NotificationPayload } from "@/lib/socket";
 describe("Real-time Notification Property Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  vi.mock("@/lib/socket", async () => {
-    const { EventEmitter } = await import("events");
-    const mockSocket = new EventEmitter();
-    return {
-      getSocket: vi.fn(() => mockSocket),
-      connectSocket: vi.fn(),
-      disconnectSocket: vi.fn(),
-    };
   });
 
   // Arbitrary for generating valid notification payloads
