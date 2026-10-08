@@ -43,7 +43,13 @@ export class FollowService {
       throw error;
     }
 
-    await updateFollowCounts(currentUserId, targetUserId, true);
+    // Denormalized User counts are best-effort. The Follow edges (and the
+    // stats endpoint derived from them) are authoritative after commit.
+    try {
+      await updateFollowCounts(currentUserId, targetUserId, true);
+    } catch (error) {
+      logger.warn("Could not update cached follow counters after commit", { error });
+    }
 
     // Secondary notifications must never turn a committed follow into a 500.
     try {
@@ -77,7 +83,11 @@ export class FollowService {
       throw new AppError("You are not following this user", 404);
     }
 
-    await updateFollowCounts(currentUserId, targetUserId, false);
+    try {
+      await updateFollowCounts(currentUserId, targetUserId, false);
+    } catch (error) {
+      logger.warn("Could not update cached unfollow counters after commit", { error });
+    }
 
     try {
       getSocketIO().emit("follow:removed", { userId: currentUserId, followingId: targetUserId });
