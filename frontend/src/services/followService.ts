@@ -1,4 +1,5 @@
 import { endpoints } from "@/lib/api";
+import { invalidateCache } from "@/lib/api/cache";
 import type { FollowListQueryParams } from "@/lib/api/paginationTypes";
 import type {
   ApiFollowUser,
@@ -11,6 +12,8 @@ export class FollowService {
     userId: string,
   ): Promise<{ success: boolean; message?: string }> {
     const response = await endpoints.follow.followUser(userId);
+    if (!response.data?.success) throw new Error("Unable to follow user");
+    invalidateCache();
     return response.data;
   }
 
@@ -19,6 +22,8 @@ export class FollowService {
     userId: string,
   ): Promise<{ success: boolean; message?: string }> {
     const response = await endpoints.follow.unfollowUser(userId);
+    if (!response.data?.success) throw new Error("Unable to unfollow user");
+    invalidateCache();
     return response.data;
   }
 

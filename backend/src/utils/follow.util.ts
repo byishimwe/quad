@@ -20,45 +20,18 @@ export const getFollowStats = async (
   targetUserId: string,
   currentUserId?: string,
 ): Promise<IFollowStats> => {
-  // Get user's follower and following counts
-  const user = await User.findOne({ clerkId: targetUserId }).select(
-    "followersCount followingCount",
-  );
-
-  if (!user) {
-    return {
-      followersCount: 0,
-      followingCount: 0,
-      isFollowing: false,
-    };
+  if (!(await User.exists({ clerkId: targetUserId }))) {
+    return { followersCount: 0, followingCount: 0, isFollowing: false };
   }
-
-  // If no current user, return basic stats
-  if (!currentUserId || currentUserId === targetUserId) {
-    const followersCount = user.followersCount || 0;
-    const followingCount = user.followingCount || 0;
-    return {
-      followersCount,
-      followingCount,
-      isFollowing: false,
-    };
-  }
-
-  // Check follow relationship
-  const followingCheck = await Follow.findOne({
-    userId: currentUserId,
-    followingId: targetUserId,
-  });
-
-  const following = !!followingCheck;
-  const followersCount = user.followersCount || 0;
-  const followingCount = user.followingCount || 0;
-
-  return {
-    followersCount,
-    followingCount,
-    isFollowing: following,
-  };
+  // Edges are authoritative; stored counters can drift after account deletion.
+  const [followersCount, followingCount, following] = await Promise.all([
+    Follow.countDocuments({ followingId: targetUserId }),
+    Follow.countDocuments({ userId: targetUserId }),
+    currentUserId && currentUserId !== targetUserId
+      ? isFollowing(currentUserId, targetUserId)
+      : Promise.resolve(false),
+  ]);
+  return { followersCount, followingCount, isFollowing: following };
 };
 
 /**
@@ -77,7 +50,7 @@ export const updateFollowCounts = async (
       {
         $set: {
           followersCount: {
-            $max: [0, { $add: ["$followersCount", change] }],
+            $max: [0, { $add: [{ $ifNull: ["$followersCount", 0] }, change] }],
           },
         },
       },
@@ -87,7 +60,7 @@ export const updateFollowCounts = async (
       {
         $set: {
           followingCount: {
-            $max: [0, { $add: ["$followingCount", change] }],
+            $max: [0, { $add: [{ $ifNull: ["$followingCount", 0] }, change] }],
           },
         },
       },

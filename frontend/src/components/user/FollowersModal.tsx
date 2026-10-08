@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { UserCardData } from "@/components/user/UserCard";
 import { FollowService } from "@/services/followService";
 import type { ApiFollowUser } from "@/types/api";
@@ -43,21 +43,12 @@ const getFollowers = async (
   page: number,
   limit: number,
 ): Promise<{ users: UserCardData[]; hasMore: boolean; total: number }> => {
-  try {
-    const result = await FollowService.getFollowers(userId, { page, limit });
-    return {
-      users: result.followers.map(convertApiFollowUserToUserCard),
-      hasMore: result.hasMore,
-      total: result.total,
-    };
-  } catch (error) {
-    logError(error, {
-      component: "FollowersModal",
-      action: "getFollowers",
-      metadata: { userId, page, limit },
-    });
-    return { users: [], hasMore: false, total: 0 };
-  }
+  const result = await FollowService.getFollowers(userId, { page, limit });
+  return {
+    users: result.followers.map(convertApiFollowUserToUserCard),
+    hasMore: result.hasMore,
+    total: result.total,
+  };
 };
 
 const getFollowing = async (
@@ -65,21 +56,12 @@ const getFollowing = async (
   page: number,
   limit: number,
 ): Promise<{ users: UserCardData[]; hasMore: boolean; total: number }> => {
-  try {
-    const result = await FollowService.getFollowing(userId, { page, limit });
-    return {
-      users: result.following.map(convertApiFollowUserToUserCard),
-      hasMore: result.hasMore,
-      total: result.total,
-    };
-  } catch (error) {
-    logError(error, {
-      component: "FollowersModal",
-      action: "getFollowing",
-      metadata: { userId, page, limit },
-    });
-    return { users: [], hasMore: false, total: 0 };
-  }
+  const result = await FollowService.getFollowing(userId, { page, limit });
+  return {
+    users: result.following.map(convertApiFollowUserToUserCard),
+    hasMore: result.hasMore,
+    total: result.total,
+  };
 };
 
 export function FollowersModal({
@@ -94,7 +76,9 @@ export function FollowersModal({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [totalCount, setTotalCount] = useState(initialCount || 0);
+  const [totalCount, setTotalCount] = useState(initialCount);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
   const follow = useFollowStore((s) => s.follow);
   const unfollow = useFollowStore((s) => s.unfollow);
@@ -104,6 +88,8 @@ export function FollowersModal({
 
   const loadUsers = useCallback(
     async (pageToLoad: number = 1) => {
+      const requestId = ++requestIdRef.current;
+      setLoadError(null);
       if (pageToLoad === 1) {
         setUsers([]);
         setPage(1);
@@ -115,40 +101,45 @@ export function FollowersModal({
       try {
         if (type === "followers") {
           const result = await getFollowers(userId, pageToLoad, 20);
+          if (requestId !== requestIdRef.current) return;
           setUsers((prev) =>
             pageToLoad === 1 ? result.users : [...prev, ...result.users],
           );
           setHasMore(result.hasMore);
-          setTotalCount(result.total || initialCount || result.users.length);
+          setTotalCount(result.total);
 
           hydrateRelationshipsIfMissing(result.users);
         } else {
           const result = await getFollowing(userId, pageToLoad, 20);
+          if (requestId !== requestIdRef.current) return;
           setUsers((prev) =>
             pageToLoad === 1 ? result.users : [...prev, ...result.users],
           );
           setHasMore(result.hasMore);
-          setTotalCount(result.total || initialCount || result.users.length);
+          setTotalCount(result.total);
 
           hydrateRelationshipsIfMissing(result.users);
         }
 
-        setPage(pageToLoad);
+        if (requestId === requestIdRef.current) setPage(pageToLoad);
       } catch (error) {
+        if (requestId === requestIdRef.current) setLoadError("Could not load this list. Please try again.");
         logError(error, {
           component: "FollowersModal",
           action: "loadUsers",
           metadata: { userId, type, pageToLoad },
         });
       } finally {
-        if (pageToLoad === 1) {
-          setIsLoading(false);
-        } else {
-          setIsLoadingMore(false);
+        if (requestId === requestIdRef.current) {
+          if (pageToLoad === 1) {
+            setIsLoading(false);
+          } else {
+            setIsLoadingMore(false);
+          }
         }
       }
     },
-    [userId, type, initialCount, hydrateRelationshipsIfMissing],
+    [userId, type, hydrateRelationshipsIfMissing],
   );
 
   // Load users when modal opens
@@ -156,8 +147,9 @@ export function FollowersModal({
     if (isOpen) {
       // This loads remote data when the modal opens; loading state is set by loadUsers.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadUsers(1);
+      void loadUsers(1);
     }
+    return () => { requestIdRef.current += 1; };
   }, [isOpen, loadUsers]);
 
   // Handle follow/unfollow
@@ -176,7 +168,7 @@ export function FollowersModal({
 
   const handleLoadMore = () => {
     if (!hasMore || isLoadingMore) return;
-    loadUsers(page + 1);
+    void loadUsers(page + 1);
   };
 
   const handleUnfollow = async (targetUserId: string) => {
@@ -211,13 +203,22 @@ export function FollowersModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <FollowersModalBody
-            isLoading={isLoading}
-            users={users}
-            type={type}
-            onFollow={handleFollow}
-            onUnfollow={handleUnfollow}
-          />
+          {loadError && (
+            <div role="alert" className="px-4 py-3 text-sm text-destructive">
+              {loadError}
+              <button type="button" onClick={() => void loadUsers(page === 1 ? 1 : page + 1)}
+                className="ml-2 underline underline-offset-2 font-semibold">Retry</button>
+            </div>
+          )}
+          {(!loadError || users.length > 0) && (
+            <FollowersModalBody
+              isLoading={isLoading}
+              users={users}
+              type={type}
+              onFollow={handleFollow}
+              onUnfollow={handleUnfollow}
+            />
+          )}
         </div>
 
         {/* Footer with count and pagination */}

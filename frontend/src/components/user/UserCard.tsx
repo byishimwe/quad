@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { logError } from "@/lib/errorHandling";
 import { useFollowStore } from "@/stores/followStore";
+import { useAuthStore } from "@/stores/authStore";
 
 export interface UserCardData {
   _id: string;
@@ -51,6 +52,8 @@ export function UserCard({
   compact = false,
   className = "",
 }: UserCardProps) {
+  const currentUserId = useAuthStore((s) => s.user?.clerkId);
+  const canShowFollow = showFollowButton && user.clerkId !== currentUserId;
   const [isFollowHovered, setIsFollowHovered] = useState(false);
   const [unfollowConfirmOpen, setUnfollowConfirmOpen] = useState(false);
 
@@ -152,7 +155,7 @@ export function UserCard({
             </div>
           </Link>
 
-          {showFollowButton && (
+          {canShowFollow && (
             <Button
               size="sm"
               variant={isFollowing ? "outline" : "default"}
@@ -241,11 +244,12 @@ export function UserCard({
             </Link>
 
             <div className="flex items-center gap-2">
-              {showFollowButton && (
+              {canShowFollow && (
                 <Button
                   size="sm"
                   variant={isFollowing ? "outline" : "default"}
                   onClick={handleFollowClick}
+                  disabled={Boolean(isPending)}
                   onMouseEnter={() => setIsFollowHovered(true)}
                   onMouseLeave={() => setIsFollowHovered(false)}
                   className={
