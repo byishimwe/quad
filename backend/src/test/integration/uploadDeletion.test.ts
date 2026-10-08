@@ -6,6 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 import { createTestApp } from "../utils/testApp.js";
 import { UploadedAsset } from "../../models/UploadedAsset.model.js";
 import { Story } from "../../models/Story.model.js";
+import { Post } from "../../models/Post.model.js";
+import { getAuthHeaders } from "../utils/testAuth.js";
 import { StoryService } from "../../services/story.service.js";
 import { uploadPostMedia } from "../../controllers/upload.controller.js";
 
@@ -80,6 +82,90 @@ describe("upload deletion ownership", () => {
     await expect(Story.findById(published._id)).resolves.toMatchObject({
       coverImage: coverUrl,
     });
+  });
+
+
+  it("does not let a caller launder another user's media through a post reference", async () => {
+    destroy.mockClear();
+    const app = createTestApp();
+    await UploadedAsset.create({
+      ownerClerkId: "user-a",
+      url,
+      publicId: "quad/posts/owned",
+      resourceType: "image",
+    });
+    await request(app).post("/api/users").set(getAuthHeaders("user-b")).send({});
+
+    // Creating a new post with another user's Quad-hosted upload is forbidden.
+    const attached = await request(app)
+      .post("/api/posts")
+      .set(getAuthHeaders("user-b"))
+      .send({ text: "Attempted reuse", media: [{ url, type: "image" }] });
+    expect(attached.status).toBe(403);
+
+    // Simulate a pre-existing/legacy content reference from before this fix.
+    await Post.create({
+      userId: "user-b",
+      author: { clerkId: "user-b", username: "user-b", email: "b@example.com" },
+      text: "Legacy reference",
+      media: [{ url, type: "image" }],
+    });
+
+    const deletion = await request(app)
+      .delete("/api/upload")
+      .set(getAuthHeaders("user-b"))
+      .send({ url });
+
+    expect(deletion.status).toBe(403);
+    expect(destroy).not.toHaveBeenCalled();
+    expect(await UploadedAsset.exists({ ownerClerkId: "user-a", url })).toBeTruthy();
+  });
+
+  it("allows an owner to delete their own unattached upload", async () => {
+    destroy.mockClear();
+    const app = createTestApp();
+    await UploadedAsset.create({
+      ownerClerkId: "user-a",
+      url,
+      publicId: "quad/posts/owned",
+      resourceType: "image",
+    });
+
+    const deletion = await request(app)
+      .delete("/api/upload")
+      .set(getAuthHeaders("user-a"))
+      .send({ url });
+
+    expect(deletion.status).toBe(200);
+    expect(destroy).toHaveBeenCalledWith("quad/posts/owned", "image");
+    expect(await UploadedAsset.exists({ url })).toBeNull();
+  });
+
+  it("rejects another user's Cloudinary media in story covers and poll questions", async () => {
+    const app = createTestApp();
+    await UploadedAsset.create({
+      ownerClerkId: "user-a",
+      url,
+      publicId: "quad/posts/owned",
+      resourceType: "image",
+    });
+    await request(app).post("/api/users").set(getAuthHeaders("user-b")).send({});
+
+    const story = await request(app)
+      .post("/api/stories")
+      .set(getAuthHeaders("user-b"))
+      .send({ title: "Unauthorized cover", content: "<p>Text</p>", status: "draft", coverImage: url });
+    expect(story.status).toBe(403);
+
+    const poll = await request(app)
+      .post("/api/polls")
+      .set(getAuthHeaders("user-b"))
+      .send({
+        question: "Unauthorized media?",
+        options: [{ text: "Yes" }, { text: "No" }],
+        questionMedia: { url, type: "image" },
+      });
+    expect(poll.status).toBe(403);
   });
 
   it.each(["invalid ratio", "invalid signature"])("removes rejected video temp files: %s", async (reason) => {

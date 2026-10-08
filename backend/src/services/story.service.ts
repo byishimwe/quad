@@ -1,6 +1,7 @@
 import { Story, type IStoryDocument } from "../models/Story.model.js";
 import { User } from "../models/User.model.js";
 import { deleteOwnedAssets } from "../utils/upload.util.js";
+import { assertOwnedUploadedMedia } from "../utils/mediaOwnership.util.js";
 import type {
   CreateStorySchemaType,
   GetStoriesQuerySchemaType,
@@ -32,6 +33,10 @@ export class StoryService {
 
     if (!validateHtmlContent(sanitizedContent)) {
       throw new AppError("Invalid or empty HTML content", 400);
+    }
+
+    if (storyData.coverImage) {
+      await assertOwnedUploadedMedia(userId, [storyData.coverImage]);
     }
 
     const readTime = calculateReadingTime(sanitizedContent);
@@ -141,6 +146,10 @@ export class StoryService {
 
     if (story.author.clerkId !== userId) {
       throw new AppError("Only the author can update this story", 403);
+    }
+
+    if (inputUpdates.coverImage && inputUpdates.coverImage !== story.coverImage) {
+      await assertOwnedUploadedMedia(userId, [inputUpdates.coverImage]);
     }
 
     let sanitizedContent: string | undefined;

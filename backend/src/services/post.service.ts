@@ -11,6 +11,7 @@ import { findUserByUsername } from "../utils/userLookup.util.js";
 import { sanitizePostText } from "../utils/content.util.js";
 import { AppError } from "../utils/appError.util.js";
 import { deleteOwnedAssets } from "../utils/upload.util.js";
+import { assertOwnedUploadedMedia } from "../utils/mediaOwnership.util.js";
 
 export interface CreatePostInput {
   text?: string;
@@ -43,6 +44,8 @@ export class PostService {
     if (!Array.isArray(data.media) || data.media.length === 0) {
       throw new AppError("Post must have at least one media", 400);
     }
+
+    await assertOwnedUploadedMedia(userId, data.media.map((item) => item.url));
 
     const sanitizedText = data.text ? sanitizePostText(data.text) : undefined;
 
@@ -135,6 +138,16 @@ export class PostService {
     const nextMedia = safeUpdates.media ?? post.media;
     if (!Array.isArray(nextMedia) || nextMedia.length === 0) {
       throw new AppError("Post must have at least one media", 400);
+    }
+
+    if (safeUpdates.media !== undefined) {
+      // Reusing existing media must keep working for older content whose
+      // upload record may predate ownership tracking.
+      const existingUrls = new Set(post.media.map((item) => item.url));
+      await assertOwnedUploadedMedia(
+        userId,
+        safeUpdates.media.filter((item) => !existingUrls.has(item.url)).map((item) => item.url),
+      );
     }
 
     const sanitizedUpdates = {

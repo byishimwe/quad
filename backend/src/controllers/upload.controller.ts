@@ -550,17 +550,23 @@ export const deleteFile = async (req: Request, res: Response) => {
       });
     }
 
-    // Ownership check: verify the authenticated user owns this file
-    const ownsFile = await verifyFileOwnership(userId, url);
-    if (!ownsFile) {
+    // Only the immutable server-created upload record can authorize deletion.
+    // Referencing an asset in a post, story, poll, or profile does not prove ownership.
+    const ownedUpload = await UploadedAsset.findOne({
+      ownerClerkId: userId,
+      url,
+      publicId,
+    }).select("resourceType").lean();
+
+    if (!ownedUpload) {
       return res.status(403).json({
         success: false,
         message: "You do not have permission to delete this file",
       });
     }
 
-    // Determine resource type (image or video)
-    const resourceType = url.includes("/video/") ? "video" : "image";
+    // Use the trusted upload record, not a client-controlled URL segment.
+    const resourceType = ownedUpload.resourceType;
 
     // Delete from Cloudinary
     const result = await deleteFromCloudinary(publicId, resourceType);
@@ -585,50 +591,3 @@ export const deleteFile = async (req: Request, res: Response) => {
     });
   }
 };
-
-/**
- * Check if the user owns the file at the given URL.
- * Searches across Post media, Story media, Poll media, and User profile/cover images.
- */
-async function verifyFileOwnership(
-  userId: string,
-  url: string,
-): Promise<boolean> {
-  const { Post } = await import("../models/Post.model.js");
-  const { Story } = await import("../models/Story.model.js");
-  const { Poll } = await import("../models/Poll.model.js");
-  const { User } = await import("../models/User.model.js");
-
-  const upload = await UploadedAsset.exists({ ownerClerkId: userId, url });
-  if (upload) return true;
-
-  // Check user profile/cover images
-  const user = await User.findOne({
-    clerkId: userId,
-    $or: [{ profileImage: url }, { coverImage: url }],
-  });
-  if (user) return true;
-
-  // Check posts
-  const post = await Post.findOne({
-    "author.clerkId": userId,
-    "media.url": url,
-  });
-  if (post) return true;
-
-  // Check stories
-  const story = await Story.findOne({
-    "author.clerkId": userId,
-    $or: [{ coverImage: url }, { content: { $eq: url } }],
-  });
-  if (story) return true;
-
-  // Check polls
-  const poll = await Poll.findOne({
-    "author.clerkId": userId,
-    "questionMedia.url": url,
-  });
-  if (poll) return true;
-
-  return false;
-}
