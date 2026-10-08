@@ -19,6 +19,7 @@ type FollowState = {
     targetUserId: string,
     isFollowing: boolean,
   ) => void;
+  syncRelationshipFromServer: (targetUserId: string, isFollowing: boolean) => void;
   hydrateRelationshipsIfMissing: (
     items: Array<{ clerkId: string; isFollowing?: boolean }>,
   ) => void;
@@ -66,6 +67,13 @@ export const useFollowStore = create<FollowState>((set, get) => ({
         ...state.isFollowingByTarget,
         [targetUserId]: isFollowing,
       },
+    }));
+  },
+
+  syncRelationshipFromServer: (targetUserId, isFollowing) => {
+    if (get().pendingByTarget[targetUserId]) return;
+    set((state) => ({
+      isFollowingByTarget: { ...state.isFollowingByTarget, [targetUserId]: isFollowing },
     }));
   },
 

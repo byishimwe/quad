@@ -65,8 +65,8 @@ export function useProfilePageController({
   const follow = useFollowStore((s) => s.follow);
   const unfollow = useFollowStore((s) => s.unfollow);
   const hydrateCounts = useFollowStore((s) => s.hydrateCounts);
-  const hydrateRelationshipIfMissing = useFollowStore(
-    (s) => s.hydrateRelationshipIfMissing,
+  const syncRelationshipFromServer = useFollowStore(
+    (s) => s.syncRelationshipFromServer,
   );
 
   const isFollowing = useFollowStore((s) => {
@@ -184,6 +184,9 @@ export function useProfilePageController({
             followersCount: followStats.followersCount,
             followingCount: followStats.followingCount,
           });
+          if (!isOwnProfile && typeof followStats.isFollowing === "boolean") {
+            syncRelationshipFromServer(profileData.clerkId, followStats.isFollowing);
+          }
         } catch (statsError) {
           logError(statsError, {
             component: "ProfilePage",
@@ -194,15 +197,8 @@ export function useProfilePageController({
 
         setUser(profileData);
 
-        if (!isOwnProfile) {
-          const followStatus = await FollowService.checkFollowing(
-            profileData.clerkId,
-          );
-          hydrateRelationshipIfMissing(
-            profileData.clerkId,
-            followStatus.isFollowing,
-          );
-        }
+        // Stats already includes the follow relationship. Avoid a separate,
+        // potentially stale request that could hide an otherwise valid profile.
       } catch (err: unknown) {
         let status: number | undefined;
 
@@ -240,7 +236,7 @@ export function useProfilePageController({
     navigate,
     isOwnProfile,
     hydrateCounts,
-    hydrateRelationshipIfMissing,
+    syncRelationshipFromServer,
   ]);
 
   useEffect(() => {
@@ -991,6 +987,7 @@ export function useProfilePageController({
         action: "followUser",
         metadata: { targetClerkId: user.clerkId },
       });
+      showErrorToast(err);
     }
   }, [user, follow]);
 
@@ -1005,6 +1002,7 @@ export function useProfilePageController({
         action: "unfollowUser",
         metadata: { targetClerkId: user.clerkId },
       });
+      showErrorToast(err);
     }
   }, [user, unfollow]);
 

@@ -13,6 +13,7 @@ import {
   generateNotificationMessage,
 } from "../utils/notification.util.js";
 import { AppError } from "../utils/appError.util.js";
+import { logger } from "../utils/logger.util.js";
 
 export class FollowService {
   static async followUser(currentUserId: string, targetUserId: string) {
@@ -20,8 +21,11 @@ export class FollowService {
       throw new AppError("You cannot follow yourself", 400);
     }
 
-    const targetUser = await User.findOne({ clerkId: targetUserId });
-    if (!targetUser) {
+    const [currentUser, targetUser] = await Promise.all([
+      User.findOne({ clerkId: currentUserId }),
+      User.findOne({ clerkId: targetUserId }),
+    ]);
+    if (!currentUser || !targetUser) {
       throw new AppError("User not found", 404);
     }
 
@@ -30,26 +34,33 @@ export class FollowService {
       throw new AppError("You are already following this user", 400);
     }
 
-    await Follow.create({
-      userId: currentUserId,
-      followingId: targetUserId,
-    });
+    try {
+      await Follow.create({ userId: currentUserId, followingId: targetUserId });
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        throw new AppError("You are already following this user", 409);
+      }
+      throw error;
+    }
 
     await updateFollowCounts(currentUserId, targetUserId, true);
 
-    const currentUser = await User.findOne({ clerkId: currentUserId });
-
-    await createNotification({
-      userId: targetUserId,
-      type: "follow",
-      actorId: currentUserId,
-      message: generateNotificationMessage("follow", currentUser?.username),
-    });
-
-    getSocketIO().emit("follow:new", {
-      userId: currentUserId,
-      followingId: targetUserId,
-    });
+    // Secondary notifications must never turn a committed follow into a 500.
+    try {
+      await createNotification({
+        userId: targetUserId,
+        type: "follow",
+        actorId: currentUserId,
+        message: generateNotificationMessage("follow", currentUser.username),
+      });
+    } catch (error) {
+      logger.warn("Follow notification failed after commit", { error });
+    }
+    try {
+      getSocketIO().emit("follow:new", { userId: currentUserId, followingId: targetUserId });
+    } catch (error) {
+      logger.warn("Follow realtime event failed after commit", { error });
+    }
   }
 
   static async unfollowUser(currentUserId: string, targetUserId: string) {
@@ -68,10 +79,11 @@ export class FollowService {
 
     await updateFollowCounts(currentUserId, targetUserId, false);
 
-    getSocketIO().emit("follow:removed", {
-      userId: currentUserId,
-      followingId: targetUserId,
-    });
+    try {
+      getSocketIO().emit("follow:removed", { userId: currentUserId, followingId: targetUserId });
+    } catch (error) {
+      logger.warn("Unfollow realtime event failed after commit", { error });
+    }
   }
 
   static async getFollowers(
