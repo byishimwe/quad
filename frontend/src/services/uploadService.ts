@@ -77,7 +77,7 @@ export class UploadService {
   // Upload post media
   static async uploadPostMedia(
     file: File,
-    onProgress?: (progress: number) => void,
+    onProgress: ((progress: number) => void) | undefined = undefined,
     signal?: AbortSignal,
   ): Promise<ApiUploadResponse> {
     // Compress image before upload
