@@ -54,7 +54,7 @@ export const updateFollowCounts = async (
           },
         },
       },
-    ]),
+    ], { updatePipeline: true }),
     // Update following count for the user who is following
     User.updateOne({ clerkId: userId }, [
       {
@@ -64,6 +64,6 @@ export const updateFollowCounts = async (
           },
         },
       },
-    ]),
+    ], { updatePipeline: true }),
   ]);
 };

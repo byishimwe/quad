@@ -28,6 +28,8 @@ describe("follow relationship consistency", () => {
     const repeated = await request(app).post("/api/follow/follow_b").set(getAuthHeaders("follow_a"));
     expect([400, 409]).toContain(repeated.status);
     expect(await Follow.countDocuments({ userId: "follow_a", followingId: "follow_b" })).toBe(1);
+    expect((await User.findOne({ clerkId: "follow_a" }))?.followingCount).toBe(1);
+    expect((await User.findOne({ clerkId: "follow_b" }))?.followersCount).toBe(1);
     const stats = await request(app).get("/api/follow/follow_b/stats").set(getAuthHeaders("follow_a"));
     expect(stats.body.data).toMatchObject({ followersCount: 1, followingCount: 0, isFollowing: true });
     const following = await request(app).get("/api/follow/follow_a/following").set(getAuthHeaders("follow_a"));
@@ -55,5 +57,7 @@ describe("follow relationship consistency", () => {
     const stats = await request(app).get("/api/follow/follow_delete_b/stats").set(getAuthHeaders("follow_delete_a"));
     expect(stats.body.data).toMatchObject({ followersCount: 0, followingCount: 0, isFollowing: false });
     expect(await Follow.countDocuments()).toBe(0);
+    expect((await User.findOne({ clerkId: "follow_delete_a" }))?.followingCount).toBe(0);
+    expect((await User.findOne({ clerkId: "follow_delete_b" }))?.followersCount).toBe(0);
   });
 });
