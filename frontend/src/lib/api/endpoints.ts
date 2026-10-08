@@ -116,12 +116,13 @@ export const endpoints = {
   },
 
   upload: {
-    post: (file: File) => {
+    post: (file: File, signal?: AbortSignal) => {
       const formData = new FormData();
       formData.append("file", file);
       return api.post("/upload/post", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: env.uploadTimeoutMs,
+        signal,
       });
     },
     story: (file: File) => {

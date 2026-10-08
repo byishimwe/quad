@@ -6,12 +6,14 @@ export function CreatePostActions({
   hasContent,
   isSubmitted,
   isLoading,
+  isUploading,
   isOverLimit,
   onCancel,
 }: {
   hasContent: boolean;
   isSubmitted: boolean;
   isLoading: boolean;
+  isUploading: boolean;
   isOverLimit: boolean;
   onCancel: () => void;
 }) {
@@ -35,9 +37,14 @@ export function CreatePostActions({
         </Button>
         <Button
           type="submit"
-          disabled={isLoading || isOverLimit || !hasContent}
+          disabled={isLoading || isUploading || isOverLimit || !hasContent}
           className="min-w-[110px] rounded-full">
-          {isLoading ? (
+          {isUploading ? (
+            <>
+              <PiSpinnerBold className="h-4 w-4 mr-2 animate-spin" />
+              Uploading...
+            </>
+          ) : isLoading ? (
             <>
               <PiSpinnerBold className="h-4 w-4 mr-2 animate-spin" />
               Posting...

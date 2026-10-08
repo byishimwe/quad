@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -83,18 +83,17 @@ export function CreatePostForm({
     await onSubmit?.(submitData);
   };
 
-  const handleMediaChangeCb = useCallback(() => {
-    form.setValue("media", uploadedMedia, { shouldValidate: true });
+  useEffect(() => {
+    // The resolver validates the same media visible in the preview.
+    form.setValue("media", uploadedMedia, { shouldValidate: false });
   }, [form, uploadedMedia]);
-
-  void handleMediaChangeCb;
 
   const textValue =
     useWatch({ control: form.control, name: "text", defaultValue: "" }) || "";
   const charCount = textValue.length;
   const isOverLimit = charCount > 1000;
   const hasMedia = uploadedMedia.length > 0;
-  const isUploading = uploadingFiles.length > 0;
+  const isUploading = uploadingFiles.some((file) => !file.error);
   const canPost = hasMedia && !isUploading && !isOverLimit && !isLoading;
 
   const openFilePicker = (accept: string) => {
