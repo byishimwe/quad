@@ -123,6 +123,7 @@ export function useProfilePageController({
 
   // Real API calls to fetch profile data
   useEffect(() => {
+    let cancelled = false;
     const fetchProfileData = async () => {
       if (!username || authLoading) return;
 
@@ -170,10 +171,13 @@ export function useProfilePageController({
           return;
         }
 
+        if (cancelled) return;
+
         try {
           const followStats = await FollowService.getFollowStats(
             profileData.clerkId,
           );
+          if (cancelled) return;
           profileData = {
             ...profileData,
             followersCount: followStats.followersCount,
@@ -195,11 +199,13 @@ export function useProfilePageController({
           });
         }
 
+        if (cancelled) return;
         setUser(profileData);
 
         // Stats already includes the follow relationship. Avoid a separate,
         // potentially stale request that could hide an otherwise valid profile.
       } catch (err: unknown) {
+        if (cancelled) return;
         let status: number | undefined;
 
         if (
@@ -222,13 +228,14 @@ export function useProfilePageController({
           );
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     if (username && !authLoading) {
       void fetchProfileData();
     }
+    return () => { cancelled = true; };
   }, [
     username,
     authLoading,

@@ -130,11 +130,12 @@ export function FollowersModal({
           metadata: { userId, type, pageToLoad },
         });
       } finally {
-        if (requestId !== requestIdRef.current) return;
-        if (pageToLoad === 1) {
-          setIsLoading(false);
-        } else {
-          setIsLoadingMore(false);
+        if (requestId === requestIdRef.current) {
+          if (pageToLoad === 1) {
+            setIsLoading(false);
+          } else {
+            setIsLoadingMore(false);
+          }
         }
       }
     },
@@ -209,13 +210,15 @@ export function FollowersModal({
                 className="ml-2 underline underline-offset-2 font-semibold">Retry</button>
             </div>
           )}
-          <FollowersModalBody
-            isLoading={isLoading}
-            users={users}
-            type={type}
-            onFollow={handleFollow}
-            onUnfollow={handleUnfollow}
-          />
+          {(!loadError || users.length > 0) && (
+            <FollowersModalBody
+              isLoading={isLoading}
+              users={users}
+              type={type}
+              onFollow={handleFollow}
+              onUnfollow={handleUnfollow}
+            />
+          )}
         </div>
 
         {/* Footer with count and pagination */}
