@@ -3,6 +3,7 @@ import { PollVote } from "../models/PollVote.model.js";
 import type { IPollVoteDocument } from "../models/PollVote.model.js";
 import { User } from "../models/User.model.js";
 import { deleteOwnedAssets } from "../utils/upload.util.js";
+import { assertOwnedUploadedMedia } from "../utils/mediaOwnership.util.js";
 import type {
   CreatePollSchemaType,
   GetPollsQuerySchemaType,
@@ -28,6 +29,10 @@ export class PollService {
     const user = await User.findOne({ clerkId: userId });
     if (!user) {
       throw new AppError("User not found", 404);
+    }
+
+    if (pollData.questionMedia?.url) {
+      await assertOwnedUploadedMedia(userId, [pollData.questionMedia.url]);
     }
 
     const options = pollData.options.map((opt) => ({
@@ -217,6 +222,9 @@ export class PollService {
         delete poll.questionMedia;
       } else {
         const { url, type, aspectRatio } = updates.questionMedia;
+        if (url !== poll.questionMedia?.url) {
+          await assertOwnedUploadedMedia(userId, [url]);
+        }
 
         if (type !== "image") {
           throw new AppError("Poll questionMedia must be an image", 400);
