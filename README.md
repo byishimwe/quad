@@ -19,8 +19,6 @@ The public auth experience is available without exposing private feeds or bypass
 | --- | --- |
 | ![Quad sign-in page](docs/assets/screenshots/login-desktop.png) | ![Quad account creation page](docs/assets/screenshots/signup-desktop.png) |
 
-![Quad sign-in page at a narrow viewport](docs/assets/screenshots/login-narrow.png)
-
 ## Architecture
 
 | Directory | Purpose |
