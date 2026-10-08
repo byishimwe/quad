@@ -29,7 +29,7 @@ export function MediaPreviewGrid({
           className="grid grid-cols-2 gap-3">
           {uploadedMedia.map((media, index) => (
             <motion.div
-              key={`uploaded-${index}`}
+              key={media.url}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -60,7 +60,7 @@ export function MediaPreviewGrid({
 
           {uploadingFiles.map((file, index) => (
             <motion.div
-              key={`uploading-${index}`}
+              key={file.id}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}

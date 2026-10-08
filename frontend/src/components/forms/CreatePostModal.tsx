@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -53,27 +53,29 @@ export function CreatePostModal({
     },
   });
 
-  const resetFormState = useCallback(() => {
-    form.reset();
-    resetMediaState();
-  }, [form, resetMediaState]);
-
-  // Reset form when modal closes (effect cleanup avoids synchronous state updates in body)
+  // Only closing the modal resets it. Upload progress must never retrigger
+  // an effect cleanup that discards the currently selected files.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      form.reset();
+      resetMediaState();
+    }
+  }, [open, form, resetMediaState]);
 
-    return () => {
-      resetFormState();
-    };
-  }, [open, resetFormState]);
+  // The resolver validates form.media, so keep it synchronized with the hook.
+  useEffect(() => {
+    form.setValue("media", uploadedMedia, { shouldValidate: false });
+  }, [form, uploadedMedia]);
 
   const textValue =
     useWatch({ control: form.control, name: "text", defaultValue: "" }) || "";
   const charCount = textValue.length;
   const isOverLimit = charCount > 1000;
   const hasMedia = uploadedMedia.length > 0;
+  const hasPendingUploads = uploadingFiles.some((file) => !file.error);
 
   const handleSubmit = async (data: CreatePostData) => {
+    if (hasPendingUploads) return;
     const submitData: CreatePostData = {
       ...(typeof data.text === "string" && data.text.trim().length > 0
         ? { text: data.text }
@@ -142,6 +144,7 @@ export function CreatePostModal({
               hasContent={hasMedia}
               isSubmitted={form.formState.isSubmitted}
               isLoading={isLoading}
+              isUploading={hasPendingUploads}
               isOverLimit={isOverLimit}
               onCancel={onClose}
             />

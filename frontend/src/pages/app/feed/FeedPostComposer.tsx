@@ -98,8 +98,9 @@ export function FeedPostComposer({
   const charCount = text.length;
   const isOverLimit = charCount > 1000;
   const hasMedia = uploadedMedia.length > 0;
+  const pendingUploads = uploadingFiles.some((file) => !file.error);
   const canSubmit =
-    !isOverLimit && hasMedia && uploadingFiles.length === 0 && !disabled;
+    !isOverLimit && hasMedia && !pendingUploads && !disabled;
 
   useEffect(() => {
     if (!disabled && isExpanded) {
@@ -123,7 +124,7 @@ export function FeedPostComposer({
       return;
     }
 
-    if (uploadingFiles.length > 0) {
+    if (pendingUploads) {
       showErrorToast("Please wait for uploads to finish");
       return;
     }
