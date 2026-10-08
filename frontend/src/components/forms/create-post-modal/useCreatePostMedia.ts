@@ -85,7 +85,7 @@ export function useCreatePostMedia() {
   const clearEntries = useCallback(() => {
     for (const entry of entriesRef.current) {
       entry.controller.abort();
-      URL.revokeObjectURL(entry.preview);
+      if (entry.preview) URL.revokeObjectURL(entry.preview);
     }
     entriesRef.current = [];
   }, []);
@@ -142,6 +142,29 @@ export function useCreatePostMedia() {
       });
       showErrorToast(error, "Failed to upload media");
     }
+  }, [publish]);
+
+  // Preload existing media in the edit form without starting new uploads.
+  const setExistingMedia = useCallback((media: MediaData[]) => {
+    const pending = entriesRef.current.filter((entry) => entry.status !== "uploaded");
+    const known = new Map(
+      entriesRef.current
+        .filter((entry) => entry.status === "uploaded")
+        .map((entry) => [entry.media!.url, entry]),
+    );
+    const existing = media.map((item) =>
+      known.get(item.url) ?? {
+        id: `existing-${++nextIdRef.current}`,
+        fingerprint: `existing:${item.url}`,
+        file: new File([], "existing-media"),
+        preview: "",
+        controller: new AbortController(),
+        status: "uploaded" as const,
+        media: item,
+      },
+    );
+    entriesRef.current = [...pending, ...existing];
+    publish();
   }, [publish]);
 
   const handleFileSelect = useCallback((files: FileList | null) => {
@@ -218,6 +241,7 @@ export function useCreatePostMedia() {
     uploadedMedia,
     uploadingFiles,
     isDragging,
+    setUploadedMedia: setExistingMedia,
     resetMediaState,
     handleFileSelect,
     removeMedia,

@@ -127,6 +127,40 @@ describe("post composer upload lifecycle", () => {
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledTimes(1));
   });
 
+
+  it("can preload existing edit media without starting an upload", () => {
+    const { result } = renderHook(() => useCreatePostMedia());
+    const item = { url: "https://example.com/existing.jpg", type: "image" as const };
+    act(() => result.current.setUploadedMedia([item]));
+    expect(result.current.uploadedMedia).toEqual([item]);
+    expect(result.current.uploadingFiles).toHaveLength(0);
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it("resolves an unreadable local image preview without hanging", async () => {
+    const previousImage = globalThis.Image;
+    class FailedImage {
+      onload: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+      naturalWidth = 0;
+      naturalHeight = 0;
+      set src(_source: string) {
+        queueMicrotask(() => this.onerror?.(new Event("error")));
+      }
+    }
+    vi.stubGlobal("Image", FailedImage);
+    mocks.upload.mockResolvedValue({ url: "https://example.com/upload.jpg" });
+    try {
+      const { result } = renderHook(() => useCreatePostMedia());
+      const image = new File(["image"], "broken.jpg", { type: "image/jpeg" });
+      act(() => result.current.handleFileSelect(fileList(image)));
+      await waitFor(() => expect(result.current.uploadingFiles).toHaveLength(0));
+      expect(result.current.uploadedMedia).toHaveLength(1);
+    } finally {
+      vi.stubGlobal("Image", previousImage);
+    }
+  });
+
   it("reset callback remains stable when upload state changes", async () => {
     const upload = deferred<{ url: string }>();
     mocks.upload.mockReturnValue(upload.promise);
